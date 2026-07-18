@@ -1,0 +1,22 @@
+# Real secrets - never commit. GitHub Actions generates this automatically
+# from repository secrets during deployment. For local/manual setups, copy
+# .env.example to .env and fill in your own values. config/config.php no
+# longer holds secrets itself (it just reads from .env), so it's safe to
+# commit and track normally.
+/.env
+
+# Real deployment path - only used if you opt into the advanced split-folder
+# deployment (app/config physically outside the web-served folder). GitHub
+# Actions generates this from the APP_ROOT_PATH secret when set. For manual
+# setups using that pattern, copy app-root.example.php to app-root.php.
+/app-root.php
+
+# Logs and runtime files
+/storage/logs/*
+!/storage/logs/.gitkeep
+
+# OS/editor cruft
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

@@ -1,0 +1,90 @@
+name: Deploy JobPro to Hosting
+
+# Iki calisma sekli var:
+# 1) "main" dalina push -> otomatik olarak "production" ortamina deploy eder.
+# 2) Actions sekmesinden elle calistir ("Run workflow") -> hangi ortama
+#    (CRM, projeler-musteri1, vb.) deploy edilecegini secip o ortamin
+#    kendi secret'lariyla calisir. Boylece AYNI depodan birden fazla farkli
+#    hedefe (farkli domain/klasor/veritabani) bagimsiz sekilde deploy
+#    yapabilirsiniz.
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deploy edilecek ortam (Settings > Environments altinda tanimli)'
+        required: true
+        type: environment
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    # Push ile tetiklenirse "production" ortamini kullanir; elle tetiklenirse
+    # kullanicinin sectigi ortami kullanir. Her ortamin KENDI secret seti
+    # vardir (Settings > Environments > [ortam adi] > Environment secrets).
+    environment: ${{ github.event.inputs.environment || 'production' }}
+    steps:
+      - name: Hangi ortama deploy ediliyor?
+        run: |
+          echo "Deploy ediliyor -> ${{ github.event.inputs.environment || 'production' }} (APP_URL: ${{ secrets.APP_URL }})"
+
+      - name: Kodu al (checkout)
+        uses: actions/checkout@v4
+
+      - name: .env dosyasini secrets'tan uret
+        run: |
+          cat > .env << EOF
+          APP_ENV=production
+          APP_DEBUG=false
+          APP_URL=${{ secrets.APP_URL }}
+          APP_TIMEZONE=${{ secrets.APP_TIMEZONE }}
+          DB_HOST=${{ secrets.DB_HOST }}
+          DB_PORT=${{ secrets.DB_PORT }}
+          DB_NAME=${{ secrets.DB_NAME }}
+          DB_USER=${{ secrets.DB_USER }}
+          DB_PASS=${{ secrets.DB_PASS }}
+          MIGRATE_TOKEN=${{ secrets.MIGRATE_TOKEN }}
+          EOF
+
+      # app-root.php SADECE gelismis "split-folder" kurulumu icin uretilir.
+      # APP_ROOT_PATH secret'ini bos birakirsaniz bu dosya hic olusturulmaz
+      # ve proje varsayilan (tek-klasor, kendi kendine yeten) modda calisir.
+      - name: app-root.php uret (sadece APP_ROOT_PATH secret'i doluysa)
+        if: ${{ secrets.APP_ROOT_PATH != '' }}
+        run: echo "<?php return '${{ secrets.APP_ROOT_PATH }}';" > app-root.php
+
+      # ------------------------------------------------------------------
+      # TEK ADIM: Butun proje klasorunu (index.php, app/, config/, vb.)
+      # OLDUGU GIBI, tek parca halinde hosting'e yukler. app/, config/ gibi
+      # klasorler kendi ic .htaccess dosyalariyla tarayicidan zaten korunur
+      # — ayri bir "web disi" konuma tasimaya gerek yoktur.
+      # ------------------------------------------------------------------
+      - name: Projeyi hosting'e yukle
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftps
+          local-dir: ./
+          server-dir: ${{ secrets.FTP_DEPLOY_DIR }}
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/.github/**
+            README.md
+
+      # ------------------------------------------------------------------
+      # Migration endpoint'ini tetikle - veritabanini kontrol edip
+      # eksik/guncel olmayan tablolari otomatik olusturur veya gunceller.
+      # ------------------------------------------------------------------
+      - name: Veritabani migration'larini calistir
+        run: |
+          RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}" "${{ secrets.APP_URL }}/migrate.php?token=${{ secrets.MIGRATE_TOKEN }}")
+          echo "$RESPONSE"
+          STATUS=$(echo "$RESPONSE" | grep "HTTP_STATUS:" | cut -d: -f2)
+          if [ "$STATUS" != "200" ]; then
+            echo "Migration istegi basarisiz oldu (HTTP $STATUS)"
+            exit 1
+          fi
