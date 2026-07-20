@@ -1,0 +1,9 @@
+CREATE TABLE IF NOT EXISTS job_employees (
+    job_id INT UNSIGNED NOT NULL,
+    user_id INT UNSIGNED NOT NULL,
+    assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    notified_at TIMESTAMP NULL,
+    PRIMARY KEY (job_id, user_id),
+    FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

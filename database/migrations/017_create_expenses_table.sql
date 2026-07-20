@@ -1,0 +1,13 @@
+CREATE TABLE IF NOT EXISTS expenses (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    job_id INT UNSIGNED NOT NULL,
+    category VARCHAR(100) NULL,
+    description VARCHAR(255) NULL,
+    amount DECIMAL(10,2) NOT NULL,
+    created_by INT UNSIGNED NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP NULL,
+    FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE,
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+    INDEX idx_expenses_job (job_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

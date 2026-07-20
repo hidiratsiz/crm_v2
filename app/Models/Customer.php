@@ -79,6 +79,26 @@ class Customer
         return $row ?: null;
     }
 
+    /**
+     * Loose (LIKE) name search — used only to give a more precise error
+     * message in voice/text commands (e.g. "musteri var ama isi yok" vs
+     * "boyle bir musteri yok"). Not used for identity matching.
+     */
+    public static function findByNameLike(string $name): array
+    {
+        $name = trim($name);
+        if ($name === '') {
+            return [];
+        }
+
+        $db = Database::connection();
+        $stmt = $db->prepare(
+            'SELECT id, name FROM customers WHERE deleted_at IS NULL AND name LIKE :name ORDER BY name'
+        );
+        $stmt->execute(['name' => '%' . $name . '%']);
+        return $stmt->fetchAll();
+    }
+
     private static function normalizePhone(?string $phone): string
     {
         if (!$phone) {

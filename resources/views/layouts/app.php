@@ -16,7 +16,15 @@
             <li class="nav-item"><a class="nav-link text-white" href="<?= Url::to('/dashboard') ?>">Dashboard</a></li>
             <li class="nav-item"><a class="nav-link text-white fw-bold" href="<?= Url::to('/quick-capture') ?>">+ Hizli Kayit</a></li>
             <li class="nav-item"><a class="nav-link text-white" href="<?= Url::to('/projects') ?>">Projeler / Teklifler</a></li>
+            <li class="nav-item"><a class="nav-link text-white fw-bold" href="<?= Url::to('/jobs') ?>">Isler</a></li>
+            <li class="nav-item"><a class="nav-link text-white" href="<?= Url::to('/calendar') ?>">Takvim</a></li>
             <li class="nav-item"><a class="nav-link text-white" href="<?= Url::to('/customers') ?>">Musteriler</a></li>
+            <?php if (Auth::can('users.manage')): ?>
+                <li class="nav-item"><a class="nav-link text-white" href="<?= Url::to('/users') ?>">Kullanicilar</a></li>
+            <?php endif; ?>
+            <?php if (Auth::can('service_modules.manage')): ?>
+                <li class="nav-item"><a class="nav-link text-white" href="<?= Url::to('/service-modules') ?>">Servisler</a></li>
+            <?php endif; ?>
         </ul>
         <hr class="text-secondary">
         <div class="small text-secondary">

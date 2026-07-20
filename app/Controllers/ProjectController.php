@@ -7,6 +7,8 @@ use App\Core\Controller;
 use App\Core\View;
 use App\Models\Customer;
 use App\Models\Estimate;
+use App\Models\EstimateFieldValue;
+use App\Models\Job;
 use App\Models\Project;
 
 class ProjectController extends Controller
@@ -42,10 +44,28 @@ class ProjectController extends Controller
         $customer = Customer::find((int) $project['customer_id']);
         $estimates = Estimate::allForProject($id);
 
+        // For each accepted estimate, check whether it's already been
+        // converted to a job so the view can show "Isi Goruntule" instead
+        // of "Ise Donustur" once conversion has happened. Also fetch the
+        // priced field breakdown for estimates created via a service module.
+        $jobsByEstimate = [];
+        $fieldValuesByEstimate = [];
+        foreach ($estimates as $estimate) {
+            $job = Job::findByEstimateId((int) $estimate['id']);
+            if ($job) {
+                $jobsByEstimate[$estimate['id']] = $job;
+            }
+            if (!empty($estimate['service_module_id'])) {
+                $fieldValuesByEstimate[$estimate['id']] = EstimateFieldValue::allForEstimate((int) $estimate['id']);
+            }
+        }
+
         echo View::renderWithLayout('projects/show', [
             'project' => $project,
             'customer' => $customer,
             'estimates' => $estimates,
+            'jobsByEstimate' => $jobsByEstimate,
+            'fieldValuesByEstimate' => $fieldValuesByEstimate,
         ]);
     }
 

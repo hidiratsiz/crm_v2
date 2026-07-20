@@ -44,6 +44,18 @@
             </div>
             <p class="text-muted mb-3"><?= nl2br(htmlspecialchars($estimate['description'] ?? '-')) ?></p>
 
+            <?php if (!empty($fieldValuesByEstimate[$estimate['id']])): ?>
+                <table class="table table-sm mb-3">
+                    <?php foreach ($fieldValuesByEstimate[$estimate['id']] as $fv): ?>
+                        <tr>
+                            <td class="text-muted"><?= htmlspecialchars($fv['label']) ?></td>
+                            <td><?= htmlspecialchars($fv['value'] ?? '-') ?></td>
+                            <td class="text-end">$<?= number_format((float) $fv['computed_price'], 2) ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                </table>
+            <?php endif; ?>
+
             <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <span class="badge <?= $statusBadgeClass[$estimate['status']] ?? 'bg-secondary' ?>">
                     <?= htmlspecialchars($statusLabels[$estimate['status']] ?? $estimate['status']) ?>
@@ -61,6 +73,18 @@
                             </select>
                         </form>
                         <a href="<?= Url::to('/estimates/edit') ?>?id=<?= $estimate['id'] ?>" class="btn btn-sm btn-outline-secondary">Duzenle</a>
+
+                        <?php if ($estimate['status'] === 'accepted'): ?>
+                            <?php if (isset($jobsByEstimate[$estimate['id']])): ?>
+                                <a href="<?= Url::to('/jobs/show') ?>?id=<?= $jobsByEstimate[$estimate['id']]['id'] ?>" class="btn btn-sm btn-success">Isi Goruntule</a>
+                            <?php else: ?>
+                                <form action="<?= Url::to('/estimates/convert-to-job') ?>" method="post" class="d-inline">
+                                    <?= Csrf::field() ?>
+                                    <input type="hidden" name="id" value="<?= $estimate['id'] ?>">
+                                    <button type="submit" class="btn btn-sm btn-success">Ise Donustur</button>
+                                </form>
+                            <?php endif; ?>
+                        <?php endif; ?>
                     <?php endif; ?>
                     <?php if (Auth::can('customers.delete')): ?>
                         <form action="<?= Url::to('/estimates/delete') ?>" method="post" class="d-inline"

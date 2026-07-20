@@ -6,10 +6,15 @@ use App\Core\Auth;
 use App\Core\Controller;
 use App\Core\Csrf;
 use App\Core\View;
+use App\Models\ChecklistItem;
 use App\Models\Customer;
 use App\Models\Estimate;
+use App\Models\Expense;
+use App\Models\Job;
 use App\Models\Project;
+use App\Models\User;
 use App\Services\AiIntakeParser;
+use App\Services\JobNotifier;
 use Throwable;
 
 class QuickCaptureController extends Controller
@@ -58,6 +63,14 @@ class QuickCaptureController extends Controller
                 'error' => 'AI isleme hatasi: ' . $e->getMessage(),
                 'raw_text' => $rawText,
             ]);
+            return;
+        }
+
+        // Command mode: the message wasn't a new customer/job, it's an
+        // instruction about an EXISTING job (assign employee, add expense,
+        // change status, etc). Handle it separately and stop here.
+        if ($parsed['intent'] !== 'new_capture') {
+            $this->handleCommand($parsed);
             return;
         }
 
@@ -143,6 +156,214 @@ class QuickCaptureController extends Controller
             'customerUpdated' => $customerUpdated,
             'estimateCount' => $estimateCount,
         ]);
+    }
+
+    // ---- Command mode: actions on EXISTING jobs, resolved by name ----
+
+    private function handleCommand(array $parsed): void
+    {
+        $customerName = trim((string) ($parsed['target_customer_name'] ?? ''));
+        if ($customerName === '') {
+            $this->renderCommandResult(false, 'Hangi musterinin/isin kastedildigi metinden anlasilamadi. Lutfen musteri adini belirterek tekrar deneyin.');
+            return;
+        }
+
+        $matches = Job::findByCustomerNameLike($customerName);
+        if (empty($matches)) {
+            // Give a precise reason: does the customer even exist, or do
+            // they exist but simply have no job (estimate not yet accepted
+            // + converted) yet?
+            $customerMatches = Customer::findByNameLike($customerName);
+
+            if (empty($customerMatches)) {
+                $this->renderCommandResult(false, "\"{$customerName}\" adinda bir musteri bulunamadi.");
+                return;
+            }
+
+            if (count($customerMatches) > 1) {
+                $names = array_column($customerMatches, 'name');
+                $this->renderCommandResult(false, "\"{$customerName}\" adiyla birden fazla musteri eslesti (" . implode(', ', $names) . "). Lutfen daha spesifik bir isim girin.");
+                return;
+            }
+
+            $this->renderCommandResult(false, "{$customerMatches[0]['name']} musteri olarak bulundu, ama henuz ise donusturulmus bir isi yok. Once ilgili teklifi \"Kabul Edildi\" yapip \"Ise Donustur\" ile bir is olusturun, sonra bu komutu tekrar deneyin.");
+            return;
+        }
+
+        $distinctCustomerIds = array_unique(array_column($matches, 'customer_id'));
+        if (count($distinctCustomerIds) > 1) {
+            $names = array_values(array_unique(array_column($matches, 'customer_name')));
+            $this->renderCommandResult(false, "\"{$customerName}\" adiyla birden fazla musteri eslesti (" . implode(', ', $names) . "). Lutfen daha spesifik bir isim girin.");
+            return;
+        }
+
+        // Most recent job for this (uniquely identified) customer.
+        $job = $matches[0];
+
+        switch ($parsed['intent']) {
+            case 'assign_employee':
+                $this->handleAssignEmployee($job, $parsed);
+                break;
+            case 'unassign_employee':
+                $this->handleUnassignEmployee($job, $parsed);
+                break;
+            case 'add_expense':
+                $this->handleAddExpense($job, $parsed);
+                break;
+            case 'add_checklist_item':
+                $this->handleAddChecklistItem($job, $parsed);
+                break;
+            case 'set_start_date':
+                $this->handleSetStartDate($job, $parsed);
+                break;
+            case 'change_job_status':
+                $this->handleChangeStatus($job, $parsed);
+                break;
+        }
+    }
+
+    private function handleAssignEmployee(array $job, array $parsed): void
+    {
+        $employeeName = trim((string) ($parsed['employee_name'] ?? ''));
+        if ($employeeName === '') {
+            $this->renderCommandResult(false, 'Hangi calisanin atanacagi metinden anlasilamadi.', $job);
+            return;
+        }
+
+        $employees = User::findByNameLike($employeeName);
+        if (empty($employees)) {
+            $this->renderCommandResult(false, "\"{$employeeName}\" adinda aktif bir kullanici bulunamadi.", $job);
+            return;
+        }
+        if (count($employees) > 1) {
+            $names = array_column($employees, 'name');
+            $this->renderCommandResult(false, "\"{$employeeName}\" adiyla birden fazla kullanici eslesti (" . implode(', ', $names) . "). Lutfen tam adi yazin.", $job);
+            return;
+        }
+
+        $employee = $employees[0];
+        Job::assignEmployee((int) $job['id'], (int) $employee['id']);
+        $notified = JobNotifier::notifyEmployeeAssigned((int) $job['id'], (int) $employee['id']);
+
+        $message = "{$employee['name']}, {$job['customer_name']} musterisinin isine atandi.";
+        $message .= $notified
+            ? ' Musteri bilgileri ve is detaylari kendisine e-posta ile gonderildi.'
+            : ' (Not: bildirim e-postasi gonderilemedi — calisanin e-posta adresini kontrol edin.)';
+
+        $this->renderCommandResult(true, $message, $job);
+    }
+
+    private function handleUnassignEmployee(array $job, array $parsed): void
+    {
+        $employeeName = trim((string) ($parsed['employee_name'] ?? ''));
+        if ($employeeName === '') {
+            $this->renderCommandResult(false, 'Hangi calisanin kaldirilacagi metinden anlasilamadi.', $job);
+            return;
+        }
+
+        $employees = User::findByNameLike($employeeName);
+        if (empty($employees)) {
+            $this->renderCommandResult(false, "\"{$employeeName}\" adinda aktif bir kullanici bulunamadi.", $job);
+            return;
+        }
+        if (count($employees) > 1) {
+            $names = array_column($employees, 'name');
+            $this->renderCommandResult(false, "\"{$employeeName}\" adiyla birden fazla kullanici eslesti (" . implode(', ', $names) . "). Lutfen tam adi yazin.", $job);
+            return;
+        }
+
+        Job::unassignEmployee((int) $job['id'], (int) $employees[0]['id']);
+        $this->renderCommandResult(true, "{$employees[0]['name']}, {$job['customer_name']} isinden kaldirildi.", $job);
+    }
+
+    private function handleAddExpense(array $job, array $parsed): void
+    {
+        $amount = $parsed['expense_amount'] ?? null;
+        if (empty($amount) || $amount <= 0) {
+            $this->renderCommandResult(false, 'Gider tutari metinden anlasilamadi. Lutfen tutari acikca belirtin (orn. "200 dolar").', $job);
+            return;
+        }
+
+        Expense::create([
+            'job_id' => $job['id'],
+            'category' => $parsed['expense_category'] ?? null,
+            'description' => $parsed['expense_description'] ?? null,
+            'amount' => $amount,
+            'created_by' => Auth::id(),
+        ]);
+
+        $message = "{$job['customer_name']} isine \${$this->formatAmount($amount)} tutarinda gider eklendi.";
+        $this->renderCommandResult(true, $message, $job);
+    }
+
+    private function handleAddChecklistItem(array $job, array $parsed): void
+    {
+        $description = trim((string) ($parsed['checklist_description'] ?? ''));
+        if ($description === '') {
+            $this->renderCommandResult(false, 'Eklenecek adim metinden anlasilamadi.', $job);
+            return;
+        }
+
+        ChecklistItem::create((int) $job['id'], $description);
+        $this->renderCommandResult(true, "\"{$description}\" adimi {$job['customer_name']} isine eklendi.", $job);
+    }
+
+    private function handleSetStartDate(array $job, array $parsed): void
+    {
+        $startDate = $parsed['start_date'] ?? null;
+        if (empty($startDate)) {
+            $this->renderCommandResult(false, 'Baslangic tarihi metinden anlasilamadi. Lutfen net bir tarih belirtin (orn. "1 Agustos").', $job);
+            return;
+        }
+
+        $startTime = $parsed['start_time'] ?? null;
+        $duration = $parsed['duration_hours'] ?? null;
+
+        Job::updateStartDate((int) $job['id'], $startDate, $startTime, $duration);
+
+        $message = "{$job['customer_name']} isinin baslangic tarihi {$startDate} olarak ayarlandi.";
+        if ($startTime) {
+            $message .= " Saat: {$startTime}.";
+        }
+        if ($duration) {
+            $message .= " Tahmini sure: {$duration} saat.";
+        }
+
+        $this->renderCommandResult(true, $message, $job);
+    }
+
+    private function handleChangeStatus(array $job, array $parsed): void
+    {
+        $status = $parsed['new_status'] ?? null;
+        $labels = [
+            'pending_schedule' => 'Baslangic Bekleniyor',
+            'scheduled' => 'Planlandi',
+            'in_progress' => 'Devam Ediyor',
+            'completed' => 'Tamamlandi',
+            'cancelled' => 'Iptal',
+        ];
+
+        if (empty($status) || !isset($labels[$status])) {
+            $this->renderCommandResult(false, 'Hangi duruma gecirilecegi metinden anlasilamadi.', $job);
+            return;
+        }
+
+        Job::updateStatus((int) $job['id'], $status);
+        $this->renderCommandResult(true, "{$job['customer_name']} isinin durumu \"{$labels[$status]}\" olarak guncellendi.", $job);
+    }
+
+    private function renderCommandResult(bool $success, string $message, ?array $job = null): void
+    {
+        echo View::renderWithLayout('quick-capture/command-result', [
+            'success' => $success,
+            'message' => $message,
+            'job' => $job,
+        ]);
+    }
+
+    private function formatAmount(float $amount): string
+    {
+        return number_format($amount, 2);
     }
 
     private function forbidden(): void

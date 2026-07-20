@@ -10,11 +10,12 @@ class Estimate
     {
         $db = Database::connection();
         $stmt = $db->prepare(
-            'INSERT INTO estimates (project_id, option_number, title, description, amount, status)
-             VALUES (:project_id, :option_number, :title, :description, :amount, :status)'
+            'INSERT INTO estimates (project_id, service_module_id, option_number, title, description, amount, status)
+             VALUES (:project_id, :service_module_id, :option_number, :title, :description, :amount, :status)'
         );
         $stmt->execute([
             'project_id' => $data['project_id'],
+            'service_module_id' => $data['service_module_id'] ?? null,
             'option_number' => $data['option_number'] ?? 1,
             'title' => $data['title'],
             'description' => $data['description'] ?? null,
@@ -47,7 +48,7 @@ class Estimate
     {
         $db = Database::connection();
         $stmt = $db->prepare(
-            'UPDATE estimates SET title = :title, description = :description, amount = :amount
+            'UPDATE estimates SET title = :title, description = :description, amount = :amount, service_module_id = :service_module_id
              WHERE id = :id'
         );
         $stmt->execute([
@@ -55,6 +56,7 @@ class Estimate
             'title' => $data['title'],
             'description' => $data['description'] ?? null,
             'amount' => $data['amount'] ?? null,
+            'service_module_id' => $data['service_module_id'] ?? null,
         ]);
     }
 

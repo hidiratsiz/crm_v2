@@ -1,11 +1,15 @@
 <?php
 
 use App\Controllers\AuthController;
+use App\Controllers\CalendarController;
 use App\Controllers\CustomerController;
 use App\Controllers\DashboardController;
 use App\Controllers\EstimateController;
+use App\Controllers\JobController;
 use App\Controllers\ProjectController;
 use App\Controllers\QuickCaptureController;
+use App\Controllers\ServiceModuleController;
+use App\Controllers\UserController;
 use App\Middleware\AuthMiddleware;
 
 /** @var \App\Core\Router $router */
@@ -27,13 +31,48 @@ $router->post('/quick-capture', [QuickCaptureController::class, 'process'], [Aut
 $router->get('/projects', [ProjectController::class, 'index'], [AuthMiddleware::class]);
 $router->get('/projects/show', [ProjectController::class, 'show'], [AuthMiddleware::class]);
 
-// Estimates / Teklifler (ekleme, duzenleme, silme, durum degistirme)
+// Estimates / Teklifler (ekleme, duzenleme, silme, durum degistirme, ise donusturme)
 $router->get('/estimates/create', [EstimateController::class, 'showCreate'], [AuthMiddleware::class]);
 $router->post('/estimates/store', [EstimateController::class, 'store'], [AuthMiddleware::class]);
 $router->get('/estimates/edit', [EstimateController::class, 'showEdit'], [AuthMiddleware::class]);
 $router->post('/estimates/update', [EstimateController::class, 'update'], [AuthMiddleware::class]);
 $router->post('/estimates/status', [EstimateController::class, 'updateStatus'], [AuthMiddleware::class]);
 $router->post('/estimates/delete', [EstimateController::class, 'delete'], [AuthMiddleware::class]);
+$router->post('/estimates/convert-to-job', [EstimateController::class, 'convertToJob'], [AuthMiddleware::class]);
+
+// Jobs / Isler (calisan atama, gider, kontrol listesi, durum/tarih)
+$router->get('/jobs', [JobController::class, 'index'], [AuthMiddleware::class]);
+$router->get('/jobs/show', [JobController::class, 'show'], [AuthMiddleware::class]);
+$router->post('/jobs/start-date', [JobController::class, 'updateStartDate'], [AuthMiddleware::class]);
+$router->post('/jobs/status', [JobController::class, 'updateStatus'], [AuthMiddleware::class]);
+$router->post('/jobs/assign-employee', [JobController::class, 'assignEmployee'], [AuthMiddleware::class]);
+$router->post('/jobs/unassign-employee', [JobController::class, 'unassignEmployee'], [AuthMiddleware::class]);
+$router->post('/jobs/expenses/add', [JobController::class, 'addExpense'], [AuthMiddleware::class]);
+$router->post('/jobs/expenses/delete', [JobController::class, 'deleteExpense'], [AuthMiddleware::class]);
+$router->post('/jobs/checklist/add', [JobController::class, 'addChecklistItem'], [AuthMiddleware::class]);
+$router->post('/jobs/checklist/toggle', [JobController::class, 'toggleChecklistItem'], [AuthMiddleware::class]);
+$router->post('/jobs/checklist/delete', [JobController::class, 'deleteChecklistItem'], [AuthMiddleware::class]);
+
+// Takvim (isler burada takvim gorunumunde)
+$router->get('/calendar', [CalendarController::class, 'index'], [AuthMiddleware::class]);
+
+// Users / Calisanlar (Admin - users.manage yetkisi)
+$router->get('/users', [UserController::class, 'index'], [AuthMiddleware::class]);
+$router->get('/users/create', [UserController::class, 'showCreate'], [AuthMiddleware::class]);
+$router->post('/users/store', [UserController::class, 'store'], [AuthMiddleware::class]);
+
+// Servis Modulleri / Dinamik Fiyatlandirma (Admin - service_modules.manage yetkisi)
+$router->get('/service-modules', [ServiceModuleController::class, 'index'], [AuthMiddleware::class]);
+$router->get('/service-modules/create', [ServiceModuleController::class, 'showCreate'], [AuthMiddleware::class]);
+$router->post('/service-modules/store', [ServiceModuleController::class, 'store'], [AuthMiddleware::class]);
+$router->get('/service-modules/edit', [ServiceModuleController::class, 'showEdit'], [AuthMiddleware::class]);
+$router->post('/service-modules/update', [ServiceModuleController::class, 'update'], [AuthMiddleware::class]);
+$router->post('/service-modules/toggle-active', [ServiceModuleController::class, 'toggleActive'], [AuthMiddleware::class]);
+$router->post('/service-modules/delete', [ServiceModuleController::class, 'delete'], [AuthMiddleware::class]);
+$router->post('/service-modules/fields/add', [ServiceModuleController::class, 'addField'], [AuthMiddleware::class]);
+$router->post('/service-modules/fields/delete', [ServiceModuleController::class, 'deleteField'], [AuthMiddleware::class]);
+$router->get('/service-modules/fields-json', [ServiceModuleController::class, 'fieldsJson'], [AuthMiddleware::class]);
+$router->get('/service-modules/calculate', [ServiceModuleController::class, 'calculate'], [AuthMiddleware::class]);
 
 // Customers
 $router->get('/customers', [CustomerController::class, 'index'], [AuthMiddleware::class]);

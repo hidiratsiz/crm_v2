@@ -15,9 +15,12 @@ class AiIntakeParser
 {
     private const SYSTEM_PROMPT = <<<PROMPT
 Sen bir ev hizmetleri isletmesi (boya, tadilat, guverte onarimi, elektrik,
-tesisat vb.) icin bir CRM asistanisin. Kullanici iki turden biri bir metin
-girecek:
+tesisat vb.) icin bir CRM asistanisin. Kullanicinin girdigi metin IKI ANA
+TURDEN birine girer — once hangisi oldugunu belirle ("intent" alani):
 
+======================================================================
+TUR 1 — "new_capture": Yeni musteri/is/teklif bilgisi
+======================================================================
 (A) Sadece musteri iletisim bilgisi (isim, adres, telefon, e-posta) — herhangi
     bir is/hizmet tanimlamadan. Ornek: "Yeni musteri ekle: Ahmet Yilmaz,
     05551234567, ahmet@example.com, Kadikoy Istanbul"
@@ -41,11 +44,56 @@ ONEMLI AYRIM ORNEGI:
   ZAMAN senaryo B'dir — adres veya musteri bilgisi de ayrica verilmis
   olmasi bunu senaryo A yapmaz.
 
+======================================================================
+TUR 2 — Mevcut bir is/musteri uzerinde KOMUT (yeni kayit degil)
+======================================================================
+Kullanici zaten sistemde olan bir musterinin isiyle ilgili bir islem
+istiyorsa, bunlardan birini sec:
+
+- "assign_employee": Bir calisani bir musterinin isine atama komutu.
+  Ornek: "Jane'in isine Alex gitsin", "Alex'i Jane'in isine ata",
+  "Jane'in projesine Ahmet'i gonder"
+  -> target_customer_name: "Jane", employee_name: "Alex"
+
+- "unassign_employee": Bir calisani bir isten kaldirma komutu.
+  Ornek: "Alex'i Jane'in isinden cikar"
+  -> target_customer_name: "Jane", employee_name: "Alex"
+
+- "add_expense": Bir ise gider ekleme komutu.
+  Ornek: "Jane'in isine 200 dolar malzeme gideri ekle"
+  -> target_customer_name: "Jane", expense_category: "Malzeme",
+     expense_description: (varsa detay), expense_amount: 200.00
+
+- "add_checklist_item": Bir ise yapilacak bir adim ekleme komutu.
+  Ornek: "Jane'in isine 'eski dolaplari sok' adimini ekle"
+  -> target_customer_name: "Jane", checklist_description: "Eski dolaplari sok"
+
+- "set_start_date": Bir isin baslangic tarihini (ve varsa saatini/suresini) belirleme komutu.
+  Ornek: "Jane'in isi 1 Agustos'ta baslasin"
+  -> target_customer_name: "Jane", start_date: "2026-08-01" (YYYY-MM-DD formatinda)
+  Ornek (saatlik is): "Jane'in isi 1 Agustos saat 14:00'te baslasin, 2 saat surecek"
+  -> target_customer_name: "Jane", start_date: "2026-08-01", start_time: "14:00", duration_hours: 2
+
+- "change_job_status": Bir isin durumunu degistirme komutu.
+  Ornek: "Jane'in isi tamamlandi", "Jane'in isini iptal et"
+  -> target_customer_name: "Jane",
+     new_status: "pending_schedule" | "scheduled" | "in_progress" | "completed" | "cancelled"
+
+Bu komutlarin HEPSINDE "target_customer_name" alani, komutun HANGI
+MUSTERININ/ISININ uzerinde oldugunu belirtir (musteri adi veya varsa is
+basligi olabilir). Emin degilsen metinde gecen ismi aynen yaz, tahmin
+etme.
+
+======================================================================
+YANIT FORMATI
+======================================================================
 Metni oku ve SADECE gecerli JSON olarak don — baska hicbir metin, aciklama
 veya markdown isareti ekleme:
 
 {
-  "customer_name": "musterinin adi, bulunamazsa null",
+  "intent": "new_capture" | "assign_employee" | "unassign_employee" | "add_expense" | "add_checklist_item" | "set_start_date" | "change_job_status",
+
+  "customer_name": "musterinin adi, bulunamazsa null (sadece new_capture icin)",
   "phone": "telefon numarasi (sadece rakamlar/+ isareti), bulunamazsa null",
   "email": "musterinin e-posta adresi, bulunamazsa null",
   "city": "sehir, bulunamazsa null",
@@ -59,10 +107,24 @@ veya markdown isareti ekleme:
       "description": "Bu teklif secenegine ozel is kapsami: hangi malzemeler, hangi olculer, hangi islemler yapilacak. Musterinin verdigi olculeri (orn. 2x4, 14x4 feet, 400 sqft) ve adetleri (orn. 3 adet direk/tahta) aynen koru.",
       "amount": "Kullanici bu teklif icin acikca bir tutar/fiyat soylediyse SAYI olarak yaz (orn. 1400.00), para birimi sembolu veya metin ekleme. Tutar belirtilmemisse null."
     }
-  ]
+  ],
+
+  "target_customer_name": "TUR 2 komutlari icin: hangi musterinin/isinin isi, bulunamazsa null",
+  "employee_name": "TUR 2 icin (assign/unassign_employee): calisan adi, yoksa null",
+  "expense_category": "TUR 2 icin (add_expense): gider kategorisi, yoksa null",
+  "expense_description": "TUR 2 icin (add_expense): gider aciklamasi, yoksa null",
+  "expense_amount": "TUR 2 icin (add_expense): SAYI olarak tutar, yoksa null",
+  "checklist_description": "TUR 2 icin (add_checklist_item): adim aciklamasi, yoksa null",
+  "start_date": "TUR 2 icin (set_start_date): YYYY-MM-DD formatinda tarih, yoksa null",
+  "start_time": "TUR 2 icin (set_start_date): HH:MM formatinda saat (sadece is saatli/randevu tarzinda ise), yoksa null",
+  "duration_hours": "TUR 2 icin (set_start_date): isin kac saat surecegi, SAYI olarak (orn. 2 veya 1.5), belirtilmemisse null",
+  "new_status": "TUR 2 icin (change_job_status): pending_schedule|scheduled|in_progress|completed|cancelled, yoksa null"
 }
 
 Kurallar:
+- intent = "new_capture" DEGILSE, "customer_name", "estimates" vb. new_capture
+  alanlarini null/bos birak — sadece ilgili TUR 2 alanlarini doldur.
+- intent = "new_capture" ISE, TUR 2 alanlarinin hepsini null birak.
 - Metin SADECE musteri iletisim bilgisi iceriyorsa (senaryo A): "service_type",
   "project_title", "details" alanlarini null birak, "estimates" dizisini
   BOS ([]) don. Bu durumda sadece musteri kaydi olusturulacak/guncellenecek,
@@ -88,10 +150,14 @@ PROMPT;
 
     /**
      * @return array{
+     *   intent: string,
      *   customer_name: ?string, phone: ?string, email: ?string, city: ?string,
      *   address: ?string, service_type: ?string, project_title: ?string,
      *   details: ?string,
-     *   estimates: array<array{title: string, description: ?string, amount: ?float}>
+     *   estimates: array<array{title: string, description: ?string, amount: ?float}>,
+     *   target_customer_name: ?string, employee_name: ?string,
+     *   expense_category: ?string, expense_description: ?string, expense_amount: ?float,
+     *   checklist_description: ?string, start_date: ?string, new_status: ?string
      * }
      */
     public static function parse(string $rawText, array $config): array
@@ -110,7 +176,30 @@ PROMPT;
             throw new RuntimeException('AI yaniti anlasilamadi (gecerli JSON degil): ' . substr($text, 0, 300));
         }
 
-        // Normalize/guarantee shape so callers never have to null-check every key
+        // Unknown/missing intent defaults to new_capture — the safest fallback,
+        // since that path never mutates existing data (it only creates).
+        $validIntents = [
+            'new_capture', 'assign_employee', 'unassign_employee', 'add_expense',
+            'add_checklist_item', 'set_start_date', 'change_job_status',
+        ];
+        $intent = $parsed['intent'] ?? 'new_capture';
+        $parsed['intent'] = in_array($intent, $validIntents, true) ? $intent : 'new_capture';
+
+        // Command-mode fields (Tur 2) — always normalized regardless of intent
+        $parsed['target_customer_name'] = $parsed['target_customer_name'] ?? null;
+        $parsed['employee_name'] = $parsed['employee_name'] ?? null;
+        $parsed['expense_category'] = $parsed['expense_category'] ?? null;
+        $parsed['expense_description'] = $parsed['expense_description'] ?? null;
+        $parsed['expense_amount'] = self::normalizeAmount($parsed['expense_amount'] ?? null);
+        $parsed['checklist_description'] = $parsed['checklist_description'] ?? null;
+        $parsed['start_date'] = self::normalizeDate($parsed['start_date'] ?? null);
+        $parsed['start_time'] = self::normalizeTime($parsed['start_time'] ?? null);
+        $parsed['duration_hours'] = self::normalizeAmount($parsed['duration_hours'] ?? null);
+        $validStatuses = ['pending_schedule', 'scheduled', 'in_progress', 'completed', 'cancelled'];
+        $parsed['new_status'] = in_array($parsed['new_status'] ?? null, $validStatuses, true) ? $parsed['new_status'] : null;
+
+        // new_capture fields (Tur 1) — always normalized so views/controller
+        // never have to null-check every key, even for command-mode intents.
         $parsed['customer_name'] = $parsed['customer_name'] ?? null;
         $parsed['phone'] = $parsed['phone'] ?? null;
         $parsed['email'] = $parsed['email'] ?? null;
@@ -119,6 +208,13 @@ PROMPT;
         $parsed['service_type'] = $parsed['service_type'] ?? null;
         $parsed['project_title'] = $parsed['project_title'] ?? null;
         $parsed['details'] = $parsed['details'] ?? null;
+
+        // The estimates-fallback / keyword safety-net logic only makes sense
+        // for new_capture — command-mode intents never create projects.
+        if ($parsed['intent'] !== 'new_capture') {
+            $parsed['estimates'] = [];
+            return $parsed;
+        }
 
         // Only fabricate a fallback single estimate when there's actual job
         // content — a pure "add customer" message should NOT create a project.
@@ -150,6 +246,25 @@ PROMPT;
         unset($estimate);
 
         return $parsed;
+    }
+
+    private static function normalizeDate($value): ?string
+    {
+        if (empty($value)) {
+            return null;
+        }
+        $timestamp = strtotime((string) $value);
+        return $timestamp === false ? null : date('Y-m-d', $timestamp);
+    }
+
+    private static function normalizeTime($value): ?string
+    {
+        if (empty($value)) {
+            return null;
+        }
+        // Accept "14:00", "2:00 PM", etc. — strtotime handles common formats.
+        $timestamp = strtotime((string) $value);
+        return $timestamp === false ? null : date('H:i', $timestamp);
     }
 
     private static function normalizeAmount($value): ?float

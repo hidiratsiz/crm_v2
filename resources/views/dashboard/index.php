@@ -32,14 +32,42 @@
         </a>
     </div>
     <div class="col-md-3">
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <h6 class="text-muted">Faz</h6>
-                <h3>2 — AI Hizli Kayit</h3>
+        <a href="<?= Url::to('/jobs') ?>" class="text-decoration-none">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-muted">Toplam Is</h6>
+                    <h3><?= (int) \App\Core\Database::connection()->query('SELECT COUNT(*) c FROM jobs WHERE deleted_at IS NULL')->fetch()['c'] ?></h3>
+                </div>
             </div>
-        </div>
+        </a>
     </div>
 </div>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">Isler</h4>
+    <a href="<?= Url::to('/jobs') ?>" class="btn btn-sm btn-outline-primary">Tumunu Gor</a>
+</div>
+
+<?php if (empty($recentJobs)): ?>
+    <div class="alert alert-secondary mb-4">
+        Henuz bir is yok. Bir teklif "Kabul Edildi" yapilip <strong>"Ise Donustur"</strong> ile
+        cevrildiginde burada gorunecek.
+    </div>
+<?php else: ?>
+    <div class="list-group mb-4">
+        <?php foreach ($recentJobs as $job): ?>
+            <a href="<?= Url::to('/jobs/show') ?>?id=<?= $job['id'] ?>" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                <div>
+                    <strong><?= htmlspecialchars($job['customer_name'] ?? '') ?></strong> — <?= htmlspecialchars($job['project_name'] ?? '') ?>
+                    <br><small class="text-muted">
+                        <?= !empty($job['employee_names']) ? htmlspecialchars($job['employee_names']) : 'Kimse atanmadi' ?>
+                    </small>
+                </div>
+                <span class="badge bg-secondary"><?= htmlspecialchars($job['status']) ?></span>
+            </a>
+        <?php endforeach; ?>
+    </div>
+<?php endif; ?>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h4 class="mb-0">Son Projeler / Teklifler</h4>

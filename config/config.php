@@ -25,6 +25,10 @@ return [
         // Secret token that protects migrate.php from random visitors.
         // Generate one with: php -r "echo bin2hex(random_bytes(32));"
         'migrate_token' => Env::get('MIGRATE_TOKEN', 'CHANGE_ME_TO_A_LONG_RANDOM_SECRET'),
+
+        // Calisanlara is atama bildirimi gonderirken kullanilan gonderen bilgisi
+        'mail_from_address' => Env::get('MAIL_FROM_ADDRESS', 'no-reply@yourdomain.com'),
+        'mail_from_name' => Env::get('MAIL_FROM_NAME', 'JobPro'),
     ],
 
     'database' => [
