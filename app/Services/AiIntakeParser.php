@@ -44,6 +44,17 @@ ONEMLI AYRIM ORNEGI:
   ZAMAN senaryo B'dir — adres veya musteri bilgisi de ayrica verilmis
   olmasi bunu senaryo A yapmaz.
 
+(C) Senaryo B ile birlikte (veya bazen tek basina) bir ON GORUSME/INCELEME/
+    OLCUM RANDEVUSU da soylenmis olabilir — henuz teklif/fiyat verilmeden
+    once "gidip bakacagiz", "incelemeye gidiyoruz", "olcum alacagiz" gibi bir
+    saha ziyareti. Ornek: "Deck restoration, 6000 Bradgate Thornhill, David
+    K, dk@rogers.com, 416 407 0110. Bu musteriyle bugun saat 14:30'da deck
+    incelemeye gitme programi yaptik." Burada hem bir is tanimi (deck
+    restoration -> senaryo B, estimates doldurulur) HEM DE bir randevu
+    (bugun 14:30, inceleme) var — ikisi ayni yanitta birlikte doldurulur:
+    appointment_date/appointment_time/appointment_notes VE service_type/
+    estimates ayni anda dolu olabilir, biri digerini disaramaz.
+
 ======================================================================
 TUR 2 — Mevcut bir is/musteri uzerinde KOMUT (yeni kayit degil)
 ======================================================================
@@ -101,6 +112,9 @@ veya markdown isareti ekleme:
   "service_type": "kisa hizmet turu ozeti, is/hizmet tanimlanmamissa null",
   "project_title": "kisa, 4-8 kelimelik proje basligi, is/hizmet tanimlanmamissa null",
   "details": "isin genel ozeti, duz metin, is/hizmet tanimlanmamissa null",
+  "appointment_date": "TUR 1 icin: musteriyle bir ON GORUSME/INCELEME/OLCUM randevusu/saha ziyareti planlaniyorsa, YYYY-MM-DD formatinda MUTLAK tarih (metindeki 'bugun', 'yarin' gibi goreceli ifadeleri en basta verilen 'bugunun tarihi'ne gore MUTLAKA cevir), yoksa null",
+  "appointment_time": "TUR 1 icin: randevunun saati HH:MM formatinda (metinde acikca bir saat soylenmisse), yoksa null",
+  "appointment_notes": "TUR 1 icin: randevuyla ilgili kisa bir not (orn. 'Deck inceleme'), yoksa null",
   "estimates": [
     {
       "title": "Teklif basligi (orn. 'Teklif 1 - Onarim ve Boyama')",
@@ -146,6 +160,10 @@ Kurallar:
 - Bir alan metinde acikca belirtilmemisse null yaz, tahmin etme.
 - Telefon numarasi verilmemisse "phone" alani null olmali; e-posta
   verilmemisse "email" alani null olmali — hicbirini UYDURMA.
+- appointment_date/appointment_time/appointment_notes, estimates alanindan
+  BAGIMSIZDIR: bir randevu soylenmisse doldurulur, is/teklif tanimlanmamis
+  olsa (senaryo A gibi) bile bir saha ziyareti ayri ayri soylenmis olabilir.
+  Randevu soylenmemisse appointment_date/time/notes'un HEPSI null olmali.
 PROMPT;
 
     /**
@@ -153,7 +171,8 @@ PROMPT;
      *   intent: string,
      *   customer_name: ?string, phone: ?string, email: ?string, city: ?string,
      *   address: ?string, service_type: ?string, project_title: ?string,
-     *   details: ?string,
+     *   details: ?string, appointment_date: ?string, appointment_time: ?string,
+     *   appointment_notes: ?string,
      *   estimates: array<array{title: string, description: ?string, amount: ?float}>,
      *   target_customer_name: ?string, employee_name: ?string,
      *   expense_category: ?string, expense_description: ?string, expense_amount: ?float,
@@ -163,7 +182,12 @@ PROMPT;
     public static function parse(string $rawText, array $config): array
     {
         $provider = AiProviderFactory::make($config);
-        $rawResponse = $provider->complete(self::SYSTEM_PROMPT, $rawText);
+        // The AI model has no innate sense of "today" — without this, "bugun"/
+        // "yarin" (today/tomorrow) in appointment or start_date phrases can't
+        // be turned into an absolute date. Prepended fresh on every call so
+        // it's always accurate regardless of when the request happens.
+        $systemPrompt = self::dateContextHeader() . "\n\n" . self::SYSTEM_PROMPT;
+        $rawResponse = $provider->complete($systemPrompt, $rawText);
 
         $text = trim($rawResponse);
         // Strip markdown code fences if the model added them despite instructions
@@ -208,6 +232,9 @@ PROMPT;
         $parsed['service_type'] = $parsed['service_type'] ?? null;
         $parsed['project_title'] = $parsed['project_title'] ?? null;
         $parsed['details'] = $parsed['details'] ?? null;
+        $parsed['appointment_date'] = self::normalizeDate($parsed['appointment_date'] ?? null);
+        $parsed['appointment_time'] = self::normalizeTime($parsed['appointment_time'] ?? null);
+        $parsed['appointment_notes'] = $parsed['appointment_notes'] ?? null;
 
         // The estimates-fallback / keyword safety-net logic only makes sense
         // for new_capture — command-mode intents never create projects.
@@ -246,6 +273,23 @@ PROMPT;
         unset($estimate);
 
         return $parsed;
+    }
+
+    /**
+     * A short, always-fresh date-context line prepended to the system
+     * prompt so the model can resolve relative date words ("bugun",
+     * "yarin", "bu hafta cuma" etc.) into an absolute YYYY-MM-DD instead of
+     * guessing or passing the relative phrase through untouched.
+     */
+    private static function dateContextHeader(): string
+    {
+        $dayNamesTr = ['Pazartesi', 'Sali', 'Carsamba', 'Persembe', 'Cuma', 'Cumartesi', 'Pazar'];
+        $dayName = $dayNamesTr[((int) date('N')) - 1];
+
+        return 'Bugunun tarihi: ' . date('Y-m-d') . " ({$dayName}). Metinde 'bugun', 'yarin', "
+            . "'obur gun', 'bu hafta cuma' gibi GORECELI tarih ifadeleri gecerse, bunlari bu "
+            . 'tarihe gore MUTLAK bir YYYY-MM-DD tarihine cevirerek yaz — asla goreceli ifadeyi '
+            . 'oldugu gibi birakma veya tahmin etme, sadece bu tarihe gore hesapla.';
     }
 
     private static function normalizeDate($value): ?string

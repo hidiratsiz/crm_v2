@@ -6,6 +6,7 @@ use App\Core\Auth;
 use App\Core\Controller;
 use App\Core\Csrf;
 use App\Core\View;
+use App\Models\Appointment;
 use App\Models\ChecklistItem;
 use App\Models\Customer;
 use App\Models\Estimate;
@@ -118,13 +119,17 @@ class QuickCaptureController extends Controller
             ], Auth::id());
         }
 
-        // Only create a project/estimates when the note actually describes
-        // a job — a pure "add customer" message just creates/updates the
-        // customer record and stops here.
+        // Only create a project when the note actually describes a job OR a
+        // site-visit appointment — a pure "add customer" message just
+        // creates/updates the customer record and stops here. An appointment
+        // needs a project to attach to even if no estimate/price was given
+        // yet (e.g. "bugun 14:30'da incelemeye gidiyoruz" with no scope/price
+        // decided), so it counts as job content on its own.
         $projectId = null;
         $estimateCount = 0;
+        $appointmentCreated = null;
 
-        if (!empty($parsed['estimates'])) {
+        if (!empty($parsed['estimates']) || !empty($parsed['appointment_date'])) {
             $projectId = Project::create([
                 'customer_id' => $customerId,
                 'name' => $parsed['project_title'] ?: ($parsed['service_type'] ?: 'Yeni Is'),
@@ -146,6 +151,17 @@ class QuickCaptureController extends Controller
                 $optionNumber++;
                 $estimateCount++;
             }
+
+            if (!empty($parsed['appointment_date'])) {
+                $appointmentId = Appointment::create([
+                    'project_id' => $projectId,
+                    'title' => 'Inceleme Randevusu',
+                    'scheduled_date' => $parsed['appointment_date'],
+                    'scheduled_time' => $parsed['appointment_time'] ?? null,
+                    'notes' => $parsed['appointment_notes'] ?? null,
+                ]);
+                $appointmentCreated = Appointment::find($appointmentId);
+            }
         }
 
         echo View::renderWithLayout('quick-capture/result', [
@@ -155,6 +171,7 @@ class QuickCaptureController extends Controller
             'isNewCustomer' => $isNewCustomer,
             'customerUpdated' => $customerUpdated,
             'estimateCount' => $estimateCount,
+            'appointmentCreated' => $appointmentCreated,
         ]);
     }
 

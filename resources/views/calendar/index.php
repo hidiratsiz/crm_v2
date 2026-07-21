@@ -37,6 +37,18 @@ $totalCells = (int) (ceil($totalCells / 7) * 7);
             <?php else: ?>
                 <div class="border rounded p-2 <?= $day === $todayDay ? 'border-primary border-2' : '' ?>" style="min-height: 110px;">
                     <div class="small fw-bold mb-1 <?= $day === $todayDay ? 'text-primary' : '' ?>"><?= $day ?></div>
+                    <?php if (!empty($appointmentsByDay[$day])): ?>
+                        <?php foreach ($appointmentsByDay[$day] as $appt): ?>
+                            <a href="<?= Url::to('/projects/show') ?>?id=<?= $appt['project_id'] ?>"
+                               class="d-block text-decoration-none mb-1 p-1 rounded small"
+                               style="color:#fff; line-height:1.2; background:#6f42c1; <?= $appt['status'] === 'cancelled' ? 'opacity:.5; text-decoration:line-through;' : '' ?>">
+                                <?php if (!empty($appt['scheduled_time'])): ?>
+                                    <strong><?= htmlspecialchars(substr($appt['scheduled_time'], 0, 5)) ?></strong>
+                                <?php endif; ?>
+                                Inceleme: <?= htmlspecialchars($appt['customer_name'] ?? '') ?>
+                            </a>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                     <?php if (!empty($jobsByDay[$day])): ?>
                         <?php foreach ($jobsByDay[$day] as $job): ?>
                             <a href="<?= Url::to('/jobs/show') ?>?id=<?= $job['id'] ?>"
@@ -59,9 +71,11 @@ $totalCells = (int) (ceil($totalCells / 7) * 7);
 </div>
 
 <div class="mt-3 small text-muted">
-    Renkler: <span class="badge bg-warning text-dark">Baslangic Bekleniyor</span>
+    Isler: <span class="badge bg-warning text-dark">Baslangic Bekleniyor</span>
     <span class="badge bg-info text-dark">Planlandi</span>
     <span class="badge bg-primary">Devam Ediyor</span>
     <span class="badge bg-success">Tamamlandi</span>
     <span class="badge bg-danger">Iptal</span>
+    &nbsp;|&nbsp;
+    Randevular: <span class="badge" style="background:#6f42c1;">Inceleme/On Gorusme</span>
 </div>

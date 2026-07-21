@@ -31,6 +31,23 @@
 </div>
 
 <?php if ($projectId !== null): ?>
+    <?php if (!empty($appointmentCreated)): ?>
+        <div class="card p-4 shadow-sm mb-4 border-info">
+            <h5 class="mb-2">Inceleme Randevusu Olusturuldu</h5>
+            <p class="mb-0">
+                <strong><?= htmlspecialchars($appointmentCreated['scheduled_date']) ?></strong>
+                <?php if (!empty($appointmentCreated['scheduled_time'])): ?>
+                    — <?= htmlspecialchars(substr($appointmentCreated['scheduled_time'], 0, 5)) ?>
+                <?php endif; ?>
+                <?php if (!empty($appointmentCreated['notes'])): ?>
+                    <br><span class="text-muted"><?= htmlspecialchars($appointmentCreated['notes']) ?></span>
+                <?php endif; ?>
+            </p>
+            <small class="text-muted d-block mt-2">Bu randevu Takvim sayfasinda da gorunecek.</small>
+        </div>
+    <?php endif; ?>
+
+    <?php if ($estimateCount > 0): ?>
     <div class="card p-4 shadow-sm mb-4">
         <h5 class="mb-3"><?= $estimateCount ?> Teklif Secenegi Olusturuldu (Taslak)</h5>
         <?php foreach ($parsed['estimates'] as $i => $estimate): ?>
@@ -49,6 +66,7 @@
             (m²/adet bazli) fiyat hesaplama Faz 2'deki Dinamik Fiyatlandirma Motoru ile gelecek.
         </small>
     </div>
+    <?php endif; ?>
 <?php else: ?>
     <div class="alert alert-secondary">
         Bu notta bir is/hizmet tanimi bulunmadigi icin sadece musteri kaydi olusturuldu/guncellendi —

@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Core\Auth;
 use App\Core\Controller;
 use App\Core\View;
+use App\Models\Appointment;
 use App\Models\Customer;
 use App\Models\Estimate;
 use App\Models\EstimateFieldValue;
@@ -66,6 +67,7 @@ class ProjectController extends Controller
             'estimates' => $estimates,
             'jobsByEstimate' => $jobsByEstimate,
             'fieldValuesByEstimate' => $fieldValuesByEstimate,
+            'appointments' => Appointment::allForProject($id),
         ]);
     }
 

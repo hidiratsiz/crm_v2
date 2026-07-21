@@ -20,6 +20,69 @@
     </div>
 <?php endif; ?>
 
+<div class="card p-3 shadow-sm mb-4">
+    <h6 class="mb-3">Randevular (On Gorusme / Inceleme)</h6>
+    <?php
+    $appointmentStatusLabels = ['scheduled' => 'Planlandi', 'completed' => 'Tamamlandi', 'cancelled' => 'Iptal'];
+    $appointmentStatusBadge = ['scheduled' => 'bg-info text-dark', 'completed' => 'bg-success', 'cancelled' => 'bg-danger'];
+    ?>
+    <?php if (empty($appointments)): ?>
+        <p class="text-muted">Henuz bir randevu planlanmadi.</p>
+    <?php else: ?>
+        <ul class="list-group mb-3">
+            <?php foreach ($appointments as $appt): ?>
+                <li class="list-group-item d-flex justify-content-between align-items-start flex-wrap gap-2">
+                    <div>
+                        <strong><?= htmlspecialchars($appt['title'] ?: 'Randevu') ?></strong>
+                        — <?= htmlspecialchars($appt['scheduled_date']) ?>
+                        <?php if (!empty($appt['scheduled_time'])): ?>
+                            <?= htmlspecialchars(substr($appt['scheduled_time'], 0, 5)) ?>
+                        <?php endif; ?>
+                        <span class="badge <?= $appointmentStatusBadge[$appt['status']] ?? 'bg-secondary' ?> ms-1">
+                            <?= htmlspecialchars($appointmentStatusLabels[$appt['status']] ?? $appt['status']) ?>
+                        </span>
+                        <?php if (!empty($appt['notes'])): ?>
+                            <br><small class="text-muted"><?= htmlspecialchars($appt['notes']) ?></small>
+                        <?php endif; ?>
+                    </div>
+                    <?php if (Auth::can('customers.edit')): ?>
+                        <div class="d-flex align-items-center gap-2">
+                            <form action="<?= Url::to('/appointments/status') ?>" method="post" class="d-inline-flex align-items-center gap-1">
+                                <?= Csrf::field() ?>
+                                <input type="hidden" name="id" value="<?= $appt['id'] ?>">
+                                <select name="status" class="form-select form-select-sm" style="width: auto;" onchange="this.form.submit()">
+                                    <?php foreach ($appointmentStatusLabels as $value => $label): ?>
+                                        <option value="<?= $value ?>" <?= $appt['status'] === $value ? 'selected' : '' ?>><?= $label ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </form>
+                            <?php if (Auth::can('customers.delete')): ?>
+                                <form action="<?= Url::to('/appointments/delete') ?>" method="post"
+                                      onsubmit="return confirm('Bu randevuyu silmek istediginizden emin misiniz?');">
+                                    <?= Csrf::field() ?>
+                                    <input type="hidden" name="id" value="<?= $appt['id'] ?>">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Sil</button>
+                                </form>
+                            <?php endif; ?>
+                        </div>
+                    <?php endif; ?>
+                </li>
+            <?php endforeach; ?>
+        </ul>
+    <?php endif; ?>
+
+    <?php if (Auth::can('customers.create')): ?>
+        <form action="<?= Url::to('/appointments/store') ?>" method="post" class="row g-2">
+            <?= Csrf::field() ?>
+            <input type="hidden" name="project_id" value="<?= $project['id'] ?>">
+            <div class="col-md-3"><input type="date" name="scheduled_date" class="form-control" required></div>
+            <div class="col-md-2"><input type="time" name="scheduled_time" class="form-control"></div>
+            <div class="col-md-4"><input type="text" name="notes" class="form-control" placeholder="orn. Guverte inceleme"></div>
+            <div class="col-md-3"><button type="submit" class="btn btn-outline-primary w-100">+ Randevu Ekle</button></div>
+        </form>
+    <?php endif; ?>
+</div>
+
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h4 class="mb-0">Teklifler</h4>
     <?php if (Auth::can('customers.create')): ?>

@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Core\Auth;
 use App\Core\Controller;
 use App\Core\View;
+use App\Models\Appointment;
 use App\Models\Job;
 
 class CalendarController extends Controller
@@ -37,6 +38,17 @@ class CalendarController extends Controller
             $jobsByDay[$day][] = $job;
         }
 
+        // Appointments (site-visit/inspection) — leads/estimator-only info,
+        // same visibility rule as the rest of the customer/project data.
+        // Employees never see these (they don't have customers.view either).
+        $appointmentsByDay = [];
+        if (Auth::can('customers.view')) {
+            foreach (Appointment::allForMonth($year, $month) as $appointment) {
+                $day = (int) date('j', strtotime($appointment['scheduled_date']));
+                $appointmentsByDay[$day][] = $appointment;
+            }
+        }
+
         $firstOfMonth = mktime(0, 0, 0, $month, 1, $year);
         $daysInMonth = (int) date('t', $firstOfMonth);
         // PHP's 'N' gives 1 (Mon) .. 7 (Sun); we render Pazartesi-first weeks
@@ -62,6 +74,7 @@ class CalendarController extends Controller
             'daysInMonth' => $daysInMonth,
             'startWeekday' => $startWeekday,
             'jobsByDay' => $jobsByDay,
+            'appointmentsByDay' => $appointmentsByDay,
             'prevYear' => $prevYear,
             'prevMonth' => $prevMonth,
             'nextYear' => $nextYear,

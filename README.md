@@ -292,3 +292,16 @@ Bu bilgiyi **sesli/yazılı komutla** da girebilirsiniz — Hızlı Kayıt kutus
 yazdığınızda sistem hem tarihi hem saati hem süreyi otomatik olarak ilgili işe kaydeder.
 
 **Not:** Employee rolündeki bir kullanıcı takvime girdiğinde sadece **kendisine atanmış işleri** görür; Admin/Office Staff gibi geniş yetkili roller tüm işleri görür — bu, İşler listesindeki aynı görünürlük mantığıyla tutarlıdır.
+
+## Randevular (Ön Görüşme / İnceleme Ziyaretleri)
+
+Bir teklif ya da iş henüz açılmadan önce de ("bugün 14:30'da güverteyi incelemeye gidiyoruz" gibi) bir saha ziyareti planlayabilirsiniz. Bu tür randevular bir **projeye (lead'e)** bağlıdır, bir İş'e (Job) değil — çünkü İş kaydı ancak bir teklif "Kabul Edildi" olup "İşe Dönüştür" denince oluşur.
+
+**AI Hızlı Kayıt ile:** Kutuya hem müşteri/iş bilgisini hem de randevu bilgisini aynı mesajda yazabilirsiniz, örneğin:
+> "Deck restoration, 6000 Bradgate Thornhill. David K, dk@rogers.com, 416 407 0110. Bu müşteriyle bugün saat 14:30'da deck incelemeye gitme programı yaptık."
+
+Sistem hem müşteriyi/projeyi/iş tanımını hem de randevu tarihini ve saatini tek seferde çıkarır — metindeki "bugün/yarın" gibi göreceli ifadeler, isteğin yapıldığı günün gerçek tarihine göre otomatik olarak kesin bir tarihe çevrilir.
+
+**Elle ekleme:** Proje sayfasında da (AI kullanmadan) tarih/saat/not girerek elle bir randevu ekleyebilir, durumunu (Planlandı/Tamamlandı/İptal) değiştirebilir veya silebilirsiniz.
+
+**Takvimde görünüm:** Randevular Takvim sayfasında İşlerden ayrı, mor renkli bir etiketle ("İnceleme: Müşteri Adı") görünür — böylece bir günde hem hangi işlerin hem de hangi inceleme ziyaretlerinin planlı olduğu tek yerden görülür. Bu bilgi, İşler gibi `customers.view` yetkisi gerektirir; Employee rolü göremez.

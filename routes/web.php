@@ -1,5 +1,6 @@
 <?php
 
+use App\Controllers\AppointmentController;
 use App\Controllers\AuthController;
 use App\Controllers\CalendarController;
 use App\Controllers\CustomerController;
@@ -53,7 +54,13 @@ $router->post('/jobs/checklist/add', [JobController::class, 'addChecklistItem'],
 $router->post('/jobs/checklist/toggle', [JobController::class, 'toggleChecklistItem'], [AuthMiddleware::class]);
 $router->post('/jobs/checklist/delete', [JobController::class, 'deleteChecklistItem'], [AuthMiddleware::class]);
 
-// Takvim (isler burada takvim gorunumunde)
+// Randevular / On Gorusme-Inceleme Ziyaretleri (proje/lead uzerinde, henuz
+// teklif/is olmadan da planlanabilir)
+$router->post('/appointments/store', [AppointmentController::class, 'store'], [AuthMiddleware::class]);
+$router->post('/appointments/status', [AppointmentController::class, 'updateStatus'], [AuthMiddleware::class]);
+$router->post('/appointments/delete', [AppointmentController::class, 'delete'], [AuthMiddleware::class]);
+
+// Takvim (isler ve randevular burada takvim gorunumunde)
 $router->get('/calendar', [CalendarController::class, 'index'], [AuthMiddleware::class]);
 
 // Users / Calisanlar (Admin - users.manage yetkisi)
