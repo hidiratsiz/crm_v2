@@ -51,6 +51,8 @@ jobs:
           DB_USER=${{ secrets.DB_USER }}
           DB_PASS=${{ secrets.DB_PASS }}
           MIGRATE_TOKEN=${{ secrets.MIGRATE_TOKEN }}
+          GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
+          AI_PROVIDER=${{ secrets.AI_PROVIDER }}
           EOF
 
       # app-root.php SADECE gelismis "split-folder" kurulumu icin uretilir.
