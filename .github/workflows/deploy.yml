@@ -64,7 +64,7 @@ jobs:
       # TEK ADIM: Butun proje klasorunu (index.php, app/, config/, vb.)
       # OLDUGU GIBI, tek parca halinde hosting'e yukler. app/, config/ gibi
       # klasorler kendi ic .htaccess dosyalariyla tarayicidan zaten korunur
-      # — ayri bir "web disi" konuma tasimaya gerek yoktur.
+      # — ayri bir "web disi" konuma tasimaya gerek yoktur..
       # ------------------------------------------------------------------
       - name: Projeyi hosting'e yukle
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
