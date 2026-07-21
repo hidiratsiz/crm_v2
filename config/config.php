@@ -58,7 +58,7 @@ return [
 
         'gemini' => [
             'api_key' => Env::get('GEMINI_API_KEY', 'CHANGE_ME_GEMINI_API_KEY'),
-            'model' => Env::get('GEMINI_MODEL', 'gemini-2.5-flash'),
+            'model' => Env::get('GEMINI_MODEL', 'gemini-3.5-flash'),
         ],
 
         // Herhangi bir OpenAI-uyumlu /chat/completions endpoint'i (kendi

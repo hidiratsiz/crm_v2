@@ -197,7 +197,7 @@ Artık sistemde **"+ Hızlı Kayıt"** adlı bir kutu var (sol menüde, giriş y
 ```
 AI_PROVIDER=gemini
 GEMINI_API_KEY=AIza...
-GEMINI_MODEL=gemini-2.5-flash
+GEMINI_MODEL=gemini-3.5-flash
 ```
 
 **Gemini API anahtarı almak için:** [aistudio.google.com/apikey](https://aistudio.google.com/apikey) üzerinden Google hesabınızla giriş yapıp ücretsiz bir API anahtarı oluşturabilirsiniz — Gemini'nin ücretsiz kullanım kotası bu tür metin çıkarma işleri için genelde yeterlidir.

@@ -52,6 +52,7 @@ jobs:
           DB_PASS=${{ secrets.DB_PASS }}
           MIGRATE_TOKEN=${{ secrets.MIGRATE_TOKEN }}
           GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
+          GEMINI_MODEL=${{ secrets.GEMINI_MODEL || 'gemini-3.5-flash' }}
           AI_PROVIDER=${{ secrets.AI_PROVIDER }}
           EOF
 

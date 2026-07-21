@@ -43,7 +43,7 @@ class AiProviderFactory
                 self::assertKey($settings, 'gemini');
                 return new GeminiProvider(
                     $settings['api_key'],
-                    $settings['model'] ?? 'gemini-2.5-flash',
+                    $settings['model'] ?? 'gemini-3.5-flash',
                     $settings['api_url'] ?? 'https://generativelanguage.googleapis.com/v1beta/models'
                 );
 
