@@ -75,4 +75,55 @@ class Payment
         $stmt = $db->prepare('UPDATE payments SET deleted_at = NOW() WHERE id = :id');
         $stmt->execute(['id' => $id]);
     }
+
+    /**
+     * Every payment company-wide (not scoped to one job), with receiving
+     * employee, job, customer and project already joined in — powers the
+     * "Finans" overview page. Optionally narrowed to a paid_at date range
+     * (either bound may be omitted).
+     */
+    public static function allWithDetails(?string $from = null, ?string $to = null): array
+    {
+        $db = Database::connection();
+        $sql = 'SELECT p.*, u.name AS received_by_name,
+                       j.id AS job_id, c.name AS customer_name, pr.name AS project_name
+                FROM payments p
+                JOIN jobs j ON j.id = p.job_id
+                JOIN projects pr ON pr.id = j.project_id
+                JOIN customers c ON c.id = pr.customer_id
+                LEFT JOIN users u ON u.id = p.received_by
+                WHERE p.deleted_at IS NULL';
+        $params = [];
+        if ($from !== null && $from !== '') {
+            $sql .= ' AND p.paid_at >= :from';
+            $params['from'] = $from;
+        }
+        if ($to !== null && $to !== '') {
+            $sql .= ' AND p.paid_at <= :to';
+            $params['to'] = $to;
+        }
+        $sql .= ' ORDER BY p.paid_at DESC, p.created_at DESC';
+
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll();
+    }
+
+    public static function totalAll(?string $from = null, ?string $to = null): float
+    {
+        $db = Database::connection();
+        $sql = 'SELECT COALESCE(SUM(amount), 0) AS total FROM payments WHERE deleted_at IS NULL';
+        $params = [];
+        if ($from !== null && $from !== '') {
+            $sql .= ' AND paid_at >= :from';
+            $params['from'] = $from;
+        }
+        if ($to !== null && $to !== '') {
+            $sql .= ' AND paid_at <= :to';
+            $params['to'] = $to;
+        }
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
+        return (float) $stmt->fetch()['total'];
+    }
 }

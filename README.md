@@ -319,3 +319,5 @@ Her İş (Job) sayfasında bir **Proje Finansmanı** kartı bulunur:
 **Ödeme ekleme:** İş sayfasındaki "Ödemeler" formundan tutar, yöntem (Nakit / Kredi Kartı / Havale-EFT / Çek), isteğe bağlı bir not ve "kim aldı" bilgisi girilerek eklenir. Giderler formuna da benzer şekilde "kim yaptı" seçimi eklendi.
 
 **AI Hızlı Kayıt ile:** "Jane'in isine 500 dolar odeme alindi" gibi bir komutla da ödeme kaydedilebilir — mevcut "gider ekle" komutuyla aynı mantık.
+
+**Finans sayfası:** Sol menüdeki "Finans" sekmesi, tek bir işe değil şirketin **tamamına** bakan bir özet sayfasıdır. Tarih aralığına göre filtrelenebilir (boş bırakılırsa tüm zamanlar) ve şunları gösterir: toplam gelir/gider/net özet kartları, şirket genelinde "kimde ne kadar var" tablosu, işe göre gruplanmış gelir-gider-bakiye özeti, ve tüm ödeme+gider hareketlerinin tek bir kronolojik listesi.

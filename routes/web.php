@@ -6,6 +6,7 @@ use App\Controllers\CalendarController;
 use App\Controllers\CustomerController;
 use App\Controllers\DashboardController;
 use App\Controllers\EstimateController;
+use App\Controllers\FinanceController;
 use App\Controllers\JobController;
 use App\Controllers\ProjectController;
 use App\Controllers\QuickCaptureController;
@@ -65,6 +66,9 @@ $router->post('/appointments/delete', [AppointmentController::class, 'delete'], 
 
 // Takvim (isler ve randevular burada takvim gorunumunde)
 $router->get('/calendar', [CalendarController::class, 'index'], [AuthMiddleware::class]);
+
+// Finans (sirket geneli odeme/gider ozeti ve takibi)
+$router->get('/finance', [FinanceController::class, 'index'], [AuthMiddleware::class]);
 
 // Users / Calisanlar (Admin - users.manage yetkisi)
 $router->get('/users', [UserController::class, 'index'], [AuthMiddleware::class]);

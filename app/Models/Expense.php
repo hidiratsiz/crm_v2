@@ -68,4 +68,55 @@ class Expense
         $stmt = $db->prepare('UPDATE expenses SET deleted_at = NOW() WHERE id = :id');
         $stmt->execute(['id' => $id]);
     }
+
+    /**
+     * Every expense company-wide (not scoped to one job), with the spending
+     * employee, job, customer and project already joined in — powers the
+     * "Finans" overview page. Optionally narrowed to an expense_date range
+     * (either bound may be omitted).
+     */
+    public static function allWithDetails(?string $from = null, ?string $to = null): array
+    {
+        $db = Database::connection();
+        $sql = 'SELECT e.*, u.name AS created_by_name,
+                       j.id AS job_id, c.name AS customer_name, pr.name AS project_name
+                FROM expenses e
+                JOIN jobs j ON j.id = e.job_id
+                JOIN projects pr ON pr.id = j.project_id
+                JOIN customers c ON c.id = pr.customer_id
+                LEFT JOIN users u ON u.id = e.created_by
+                WHERE e.deleted_at IS NULL';
+        $params = [];
+        if ($from !== null && $from !== '') {
+            $sql .= ' AND e.expense_date >= :from';
+            $params['from'] = $from;
+        }
+        if ($to !== null && $to !== '') {
+            $sql .= ' AND e.expense_date <= :to';
+            $params['to'] = $to;
+        }
+        $sql .= ' ORDER BY e.expense_date DESC, e.created_at DESC';
+
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll();
+    }
+
+    public static function totalAll(?string $from = null, ?string $to = null): float
+    {
+        $db = Database::connection();
+        $sql = 'SELECT COALESCE(SUM(amount), 0) AS total FROM expenses WHERE deleted_at IS NULL';
+        $params = [];
+        if ($from !== null && $from !== '') {
+            $sql .= ' AND expense_date >= :from';
+            $params['from'] = $from;
+        }
+        if ($to !== null && $to !== '') {
+            $sql .= ' AND expense_date <= :to';
+            $params['to'] = $to;
+        }
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
+        return (float) $stmt->fetch()['total'];
+    }
 }

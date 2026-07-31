@@ -211,4 +211,34 @@ class Job
         $stmt->execute(['job_id' => $jobId]);
         return $stmt->fetchAll();
     }
+
+    /**
+     * Maps job_id => contract amount (the linked estimate's amount, or null
+     * if the job has no linked estimate/amount) for a set of job ids.
+     * Powers the company-wide Finans page's per-job balance column without
+     * needing a separate Estimate::find() call per job.
+     */
+    public static function contractAmountsForJobs(array $jobIds): array
+    {
+        $jobIds = array_values(array_unique(array_map('intval', $jobIds)));
+        if (empty($jobIds)) {
+            return [];
+        }
+
+        $db = Database::connection();
+        $placeholders = implode(',', array_fill(0, count($jobIds), '?'));
+        $stmt = $db->prepare(
+            "SELECT j.id AS job_id, e.amount
+             FROM jobs j
+             LEFT JOIN estimates e ON e.id = j.estimate_id
+             WHERE j.id IN ({$placeholders})"
+        );
+        $stmt->execute($jobIds);
+
+        $result = [];
+        foreach ($stmt->fetchAll() as $row) {
+            $result[(int) $row['job_id']] = $row['amount'] !== null ? (float) $row['amount'] : null;
+        }
+        return $result;
+    }
 }

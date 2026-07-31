@@ -24,6 +24,9 @@
             <li class="nav-item"><a class="nav-link text-white" href="<?= Url::to('/projects') ?>">Projeler / Teklifler</a></li>
             <li class="nav-item"><a class="nav-link text-white fw-bold" href="<?= Url::to('/jobs') ?>">Isler</a></li>
             <li class="nav-item"><a class="nav-link text-white" href="<?= Url::to('/calendar') ?>">Takvim</a></li>
+            <?php if (Auth::can('customers.view')): ?>
+                <li class="nav-item"><a class="nav-link text-white" href="<?= Url::to('/finance') ?>">Finans</a></li>
+            <?php endif; ?>
             <li class="nav-item"><a class="nav-link text-white" href="<?= Url::to('/customers') ?>">Musteriler</a></li>
             <?php if (Auth::can('users.manage')): ?>
                 <li class="nav-item"><a class="nav-link text-white" href="<?= Url::to('/users') ?>">Kullanicilar</a></li>
