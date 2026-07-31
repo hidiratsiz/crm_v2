@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>JobPro</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="<?= Url::to('/assets/css/app.css') ?>" rel="stylesheet">
+    <link href="<?= Url::asset('/assets/css/app.css') ?>" rel="stylesheet">
 </head>
 <body>
 <div class="mobile-topbar">
@@ -47,6 +47,6 @@
     </main>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="<?= Url::to('/assets/js/app.js') ?>"></script>
+<script src="<?= Url::asset('/assets/js/app.js') ?>"></script>
 </body>
 </html>

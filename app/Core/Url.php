@@ -17,4 +17,19 @@ class Url
         $path = '/' . ltrim($path, '/');
         return $base . $path;
     }
+
+    /**
+     * Same as to(), but appends a "?v=<mtime>" cache-buster for static
+     * assets (CSS/JS). Without this, browsers (especially mobile) can keep
+     * serving a cached copy of app.css/app.js indefinitely after a deploy,
+     * since these files are otherwise requested with the exact same URL
+     * every time. Use this for any file under /assets/.
+     */
+    public static function asset(string $path): string
+    {
+        $url = self::to($path);
+        $diskPath = APP_ROOT . '/' . ltrim($path, '/');
+        $version = is_file($diskPath) ? (string) filemtime($diskPath) : '1';
+        return $url . '?v=' . $version;
+    }
 }
