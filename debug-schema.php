@@ -54,6 +54,16 @@ try {
         }
     }
 
+    echo "\n=== Diskteki migration dosyalari (database/migrations/*.sql) ===\n";
+    $files = glob(APP_ROOT . '/database/migrations/*.sql') ?: [];
+    sort($files, SORT_STRING);
+    foreach ($files as $file) {
+        echo '  - ' . basename($file) . ' (' . filesize($file) . ' bytes, degisim: ' . date('Y-m-d H:i:s', filemtime($file)) . ")\n";
+    }
+    if (empty($files)) {
+        echo "  (hic dosya bulunamadi!)\n";
+    }
+
     echo "\n=== Uygulanmis migrationlar ===\n";
     $stmt = $pdo->query('SELECT migration, batch, run_at FROM migrations ORDER BY id DESC LIMIT 15');
     foreach ($stmt->fetchAll() as $row) {
