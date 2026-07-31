@@ -143,6 +143,15 @@ MUSTERININ/ISININ uzerinde oldugunu belirtir (musteri adi veya varsa is
 basligi olabilir). Emin degilsen metinde gecen ismi aynen yaz, tahmin
 etme.
 
+IS NUMARASI (ID) ILE HEDEFLEME: Kullanici musteri adi yerine dogrudan is
+numarasi da soyleyebilir — "3 nolu ise 200 dolar gider ekle", "is 5'e
+Alex'i ata", "#7 tamamlandi", "5 numarali isin durumu devam ediyor"
+gibi. Boyle bir IS NUMARASI geciyorsa "target_job_id" alanina SAYI
+olarak yaz (orn. 3) ve target_customer_name'i null birak. Is numarasi
+YOKSA target_job_id null olmali — metindeki tutar/saat gibi diger
+sayilari ASLA is numarasi sanma; sadece "is", "no", "numara", "#" gibi
+bir ifadeyle acikca is kimligi olarak soylenen sayiyi kullan.
+
 ======================================================================
 YANIT FORMATI
 ======================================================================
@@ -172,6 +181,7 @@ veya markdown isareti ekleme:
   ],
 
   "target_customer_name": "TUR 2 komutlari icin: hangi musterinin/isinin isi, bulunamazsa null",
+  "target_job_id": "TUR 2 komutlari icin: metinde acikca bir is numarasi soylenmisse SAYI olarak (orn. '3 nolu is' -> 3), yoksa null",
   "employee_name": "TUR 2 icin (assign/unassign_employee): calisan adi, yoksa null",
   "expense_category": "TUR 2 icin (add_expense): gider kategorisi, yoksa null",
   "expense_description": "TUR 2 icin (add_expense): gider aciklamasi, yoksa null",
@@ -266,6 +276,8 @@ PROMPT;
 
         // Command-mode fields (Tur 2) — always normalized regardless of intent
         $parsed['target_customer_name'] = $parsed['target_customer_name'] ?? null;
+        $targetJobId = $parsed['target_job_id'] ?? null;
+        $parsed['target_job_id'] = (is_numeric($targetJobId) && (int) $targetJobId > 0) ? (int) $targetJobId : null;
         $parsed['employee_name'] = $parsed['employee_name'] ?? null;
         $parsed['expense_category'] = $parsed['expense_category'] ?? null;
         $parsed['expense_description'] = $parsed['expense_description'] ?? null;

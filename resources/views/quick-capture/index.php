@@ -17,6 +17,7 @@
         <li>"Jane'in isi 1 Agustos'ta baslasin" — baslangic tarihi belirler</li>
         <li>"Jane'in isi 1 Agustos saat 14:00'te baslasin, 2 saat surecek" — saatlik is icin saat/sure de belirler</li>
         <li>"Jane'in isi tamamlandi" — is durumunu gunceller</li>
+        <li>Musteri adi yerine is numarasi da kullanabilirsiniz: "3 nolu ise 200 dolar gider ekle", "is 5 tamamlandi" (is numaralari Isler sayfasinda #ID olarak gorunur)</li>
     </ul>
 </div>
 

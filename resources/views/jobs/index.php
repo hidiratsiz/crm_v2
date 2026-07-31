@@ -30,6 +30,7 @@
         <table class="table table-hover bg-white shadow-sm">
             <thead>
             <tr>
+                <th>ID</th>
                 <th>Musteri / Is</th>
                 <th>Atanan Calisan(lar)</th>
                 <th>Durum</th>
@@ -40,6 +41,7 @@
             <tbody>
             <?php foreach ($jobs as $job): ?>
                 <tr>
+                    <td><span class="badge bg-secondary">#<?= $job['id'] ?></span></td>
                     <td>
                         <strong><?= htmlspecialchars($job['customer_name'] ?? '-') ?></strong>
                         <br><small class="text-muted"><?= htmlspecialchars($job['project_name'] ?? '') ?></small>

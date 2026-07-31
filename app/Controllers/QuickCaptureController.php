@@ -182,8 +182,10 @@ class QuickCaptureController extends Controller
     private function handleCommand(array $parsed): void
     {
         $customerName = trim((string) ($parsed['target_customer_name'] ?? ''));
-        if ($customerName === '') {
-            $this->renderCommandResult(false, 'Hangi musterinin/isin kastedildigi metinden anlasilamadi. Lutfen musteri adini belirterek tekrar deneyin.');
+        $targetJobId = $parsed['target_job_id'] ?? null;
+
+        if ($customerName === '' && $targetJobId === null) {
+            $this->renderCommandResult(false, 'Hangi musterinin/isin kastedildigi metinden anlasilamadi. Lutfen musteri adini veya is numarasini belirterek tekrar deneyin.');
             return;
         }
 
@@ -192,7 +194,24 @@ class QuickCaptureController extends Controller
         // not exist yet (that only appears once an estimate is accepted and
         // converted), so they need a separate resolution path.
         if (in_array($parsed['intent'], ['update_estimate', 'send_estimate'], true)) {
+            if ($customerName === '') {
+                $this->renderCommandResult(false, 'Teklif komutlari icin musteri adi gerekli — lutfen musteri adini belirterek tekrar deneyin.');
+                return;
+            }
             $this->handleEstimateCommand($customerName, $parsed);
+            return;
+        }
+
+        // Direct job-ID targeting ("3 nolu ise gider ekle") skips the whole
+        // name-matching flow — unambiguous and works even for customers with
+        // multiple jobs or similar names.
+        if ($targetJobId !== null) {
+            $job = Job::findWithDetails($targetJobId);
+            if (!$job) {
+                $this->renderCommandResult(false, "#{$targetJobId} numarali bir is bulunamadi. Is numarasini Isler sayfasindan kontrol edebilirsiniz.");
+                return;
+            }
+            $this->dispatchJobCommand($job, $parsed);
             return;
         }
 
@@ -226,8 +245,15 @@ class QuickCaptureController extends Controller
         }
 
         // Most recent job for this (uniquely identified) customer.
-        $job = $matches[0];
+        $this->dispatchJobCommand($matches[0], $parsed);
+    }
 
+    /**
+     * Routes a resolved job (found either by customer name or directly by
+     * job ID) to the right intent handler.
+     */
+    private function dispatchJobCommand(array $job, array $parsed): void
+    {
         switch ($parsed['intent']) {
             case 'assign_employee':
                 $this->handleAssignEmployee($job, $parsed);

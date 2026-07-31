@@ -18,7 +18,10 @@ $statusBadgeClass = [
 
 <div class="d-flex justify-content-between align-items-start mb-4">
     <div>
-        <h2 class="mb-1"><?= htmlspecialchars($project['name'] ?? 'Is') ?></h2>
+        <h2 class="mb-1">
+            <?= htmlspecialchars($project['name'] ?? 'Is') ?>
+            <span class="badge bg-secondary fs-6 align-middle">Is #<?= $job['id'] ?></span>
+        </h2>
         <?php if ($customer): ?>
             <p class="text-muted mb-0">
                 Musteri: <a href="<?= Url::to('/customers/edit') ?>?id=<?= $customer['id'] ?>"><?= htmlspecialchars($customer['name']) ?></a>

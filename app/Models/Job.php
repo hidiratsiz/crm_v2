@@ -98,6 +98,28 @@ class Job
     }
 
     /**
+     * A single job by ID with customer/project name joined in — same row
+     * shape as findByCustomerNameLike(), used when a Quick Capture command
+     * targets a job directly by number ("3 nolu ise gider ekle") instead
+     * of by customer name.
+     */
+    public static function findWithDetails(int $id): ?array
+    {
+        $db = Database::connection();
+        $stmt = $db->prepare(
+            'SELECT j.*, c.id AS customer_id, c.name AS customer_name, p.name AS project_name
+             FROM jobs j
+             JOIN projects p ON p.id = j.project_id
+             JOIN customers c ON c.id = p.customer_id
+             WHERE j.id = :id AND j.deleted_at IS NULL
+             LIMIT 1'
+        );
+        $stmt->execute(['id' => $id]);
+        $row = $stmt->fetch();
+        return $row ?: null;
+    }
+
+    /**
      * Finds jobs belonging to customers whose name matches (loosely, via
      * LIKE), most recent first. Used to resolve voice/text commands like
      * "Jane'in isine Alex'i ata" to an actual job record.
