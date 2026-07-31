@@ -251,12 +251,15 @@ class JobController extends Controller
         // expense a field employee reported by phone) via the select.
         $performedBy = (int) $this->input('performed_by');
 
+        $expenseDate = trim((string) $this->input('expense_date'));
+
         if ($amount > 0) {
             Expense::create([
                 'job_id' => $job['id'],
                 'category' => $this->input('category'),
                 'description' => $this->input('description'),
                 'amount' => $amount,
+                'expense_date' => $expenseDate !== '' ? $expenseDate : date('Y-m-d'),
                 'created_by' => $performedBy > 0 ? $performedBy : Auth::id(),
             ]);
         }
@@ -315,6 +318,7 @@ class JobController extends Controller
         }
 
         $receivedBy = (int) $this->input('received_by');
+        $paidAt = trim((string) $this->input('paid_at'));
 
         if ($amount > 0) {
             Payment::create([
@@ -323,6 +327,7 @@ class JobController extends Controller
                 'method' => $method,
                 'note' => $this->input('note'),
                 'received_by' => $receivedBy > 0 ? $receivedBy : Auth::id(),
+                'paid_at' => $paidAt !== '' ? $paidAt : date('Y-m-d'),
             ]);
         }
 

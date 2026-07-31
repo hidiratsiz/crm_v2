@@ -241,10 +241,11 @@ $statusBadgeClass = [
         <p class="text-muted">Henuz bir gider eklenmedi.</p>
     <?php else: ?>
         <table class="table table-sm mb-3">
-            <thead><tr><th>Kategori</th><th>Aciklama</th><th>Tutar</th><th>Kim</th><th></th></tr></thead>
+            <thead><tr><th>Tarih</th><th>Kategori</th><th>Aciklama</th><th>Tutar</th><th>Kim</th><th></th></tr></thead>
             <tbody>
             <?php foreach ($expenses as $expense): ?>
                 <tr>
+                    <td><?= !empty($expense['expense_date']) ? htmlspecialchars(date('d.m.Y', strtotime($expense['expense_date']))) : '-' ?></td>
                     <td><?= htmlspecialchars($expense['category'] ?? '-') ?></td>
                     <td><?= htmlspecialchars($expense['description'] ?? '-') ?></td>
                     <td>$<?= number_format((float) $expense['amount'], 2) ?></td>
@@ -268,8 +269,9 @@ $statusBadgeClass = [
         <form action="<?= Url::to('/jobs/expenses/add') ?>" method="post" class="row g-2">
             <?= Csrf::field() ?>
             <input type="hidden" name="id" value="<?= $job['id'] ?>">
+            <div class="col-md-2"><input type="date" name="expense_date" class="form-control" value="<?= date('Y-m-d') ?>"></div>
             <div class="col-md-2"><input type="text" name="category" class="form-control" placeholder="Kategori (orn. Malzeme)"></div>
-            <div class="col-md-4"><input type="text" name="description" class="form-control" placeholder="Aciklama"></div>
+            <div class="col-md-3"><input type="text" name="description" class="form-control" placeholder="Aciklama"></div>
             <div class="col-md-2"><input type="text" name="amount" class="form-control" placeholder="Tutar $" required></div>
             <div class="col-md-2">
                 <select name="performed_by" class="form-select">
@@ -279,7 +281,7 @@ $statusBadgeClass = [
                     <?php endforeach; ?>
                 </select>
             </div>
-            <div class="col-md-2"><button type="submit" class="btn btn-outline-primary w-100">Ekle</button></div>
+            <div class="col-md-1"><button type="submit" class="btn btn-outline-primary w-100">Ekle</button></div>
         </form>
     <?php endif; ?>
 </div>
@@ -299,10 +301,11 @@ $statusBadgeClass = [
         <p class="text-muted">Henuz bir odeme kaydedilmedi.</p>
     <?php else: ?>
         <table class="table table-sm mb-3">
-            <thead><tr><th>Tutar</th><th>Yontem</th><th>Not</th><th>Kim Aldi</th><th></th></tr></thead>
+            <thead><tr><th>Tarih</th><th>Tutar</th><th>Yontem</th><th>Not</th><th>Kim Aldi</th><th></th></tr></thead>
             <tbody>
             <?php foreach ($payments as $payment): ?>
                 <tr>
+                    <td><?= !empty($payment['paid_at']) ? htmlspecialchars(date('d.m.Y', strtotime($payment['paid_at']))) : '-' ?></td>
                     <td>$<?= number_format((float) $payment['amount'], 2) ?></td>
                     <td><?= htmlspecialchars($paymentMethodLabels[$payment['method']] ?? $payment['method']) ?></td>
                     <td><?= htmlspecialchars($payment['note'] ?? '-') ?></td>
@@ -326,6 +329,7 @@ $statusBadgeClass = [
         <form action="<?= Url::to('/jobs/payments/add') ?>" method="post" class="row g-2">
             <?= Csrf::field() ?>
             <input type="hidden" name="id" value="<?= $job['id'] ?>">
+            <div class="col-md-2"><input type="date" name="paid_at" class="form-control" value="<?= date('Y-m-d') ?>"></div>
             <div class="col-md-2"><input type="text" name="amount" class="form-control" placeholder="Tutar $" required></div>
             <div class="col-md-2">
                 <select name="method" class="form-select">
@@ -335,7 +339,7 @@ $statusBadgeClass = [
                 </select>
             </div>
             <div class="col-md-3"><input type="text" name="note" class="form-control" placeholder="Not (istege bagli)"></div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <select name="received_by" class="form-select">
                     <option value="">Kim aldi? (Ben)</option>
                     <?php foreach ($availableEmployees as $emp): ?>
@@ -343,7 +347,7 @@ $statusBadgeClass = [
                     <?php endforeach; ?>
                 </select>
             </div>
-            <div class="col-md-2"><button type="submit" class="btn btn-outline-primary w-100">Ekle</button></div>
+            <div class="col-md-1"><button type="submit" class="btn btn-outline-primary w-100">Ekle</button></div>
         </form>
     <?php endif; ?>
 </div>

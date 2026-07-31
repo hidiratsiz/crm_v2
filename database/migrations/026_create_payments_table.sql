@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS payments (
     method ENUM('cash','card','bank_transfer','check') NOT NULL DEFAULT 'cash',
     note VARCHAR(255) NULL,
     received_by INT UNSIGNED NULL,
+    paid_at DATE NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP NULL,
     FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE,

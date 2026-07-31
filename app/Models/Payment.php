@@ -17,8 +17,8 @@ class Payment
     {
         $db = Database::connection();
         $stmt = $db->prepare(
-            'INSERT INTO payments (job_id, amount, method, note, received_by)
-             VALUES (:job_id, :amount, :method, :note, :received_by)'
+            'INSERT INTO payments (job_id, amount, method, note, received_by, paid_at)
+             VALUES (:job_id, :amount, :method, :note, :received_by, :paid_at)'
         );
         $stmt->execute([
             'job_id' => $data['job_id'],
@@ -26,6 +26,7 @@ class Payment
             'method' => $data['method'] ?? 'cash',
             'note' => $data['note'] ?? null,
             'received_by' => $data['received_by'] ?? null,
+            'paid_at' => $data['paid_at'] ?? date('Y-m-d'),
         ]);
         return (int) $db->lastInsertId();
     }
@@ -52,7 +53,7 @@ class Payment
              FROM payments p
              LEFT JOIN users u ON u.id = p.received_by
              WHERE p.job_id = :job_id AND p.deleted_at IS NULL
-             ORDER BY p.created_at DESC'
+             ORDER BY p.paid_at DESC, p.created_at DESC'
         );
         $stmt->execute(['job_id' => $jobId]);
         return $stmt->fetchAll();

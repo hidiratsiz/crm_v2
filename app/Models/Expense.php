@@ -10,14 +10,15 @@ class Expense
     {
         $db = Database::connection();
         $stmt = $db->prepare(
-            'INSERT INTO expenses (job_id, category, description, amount, created_by)
-             VALUES (:job_id, :category, :description, :amount, :created_by)'
+            'INSERT INTO expenses (job_id, category, description, amount, expense_date, created_by)
+             VALUES (:job_id, :category, :description, :amount, :expense_date, :created_by)'
         );
         $stmt->execute([
             'job_id' => $data['job_id'],
             'category' => $data['category'] ?? null,
             'description' => $data['description'] ?? null,
             'amount' => $data['amount'],
+            'expense_date' => $data['expense_date'] ?? date('Y-m-d'),
             'created_by' => $data['created_by'] ?? null,
         ]);
         return (int) $db->lastInsertId();
@@ -45,7 +46,7 @@ class Expense
              FROM expenses e
              LEFT JOIN users u ON u.id = e.created_by
              WHERE e.job_id = :job_id AND e.deleted_at IS NULL
-             ORDER BY e.created_at DESC'
+             ORDER BY e.expense_date DESC, e.created_at DESC'
         );
         $stmt->execute(['job_id' => $jobId]);
         return $stmt->fetchAll();
