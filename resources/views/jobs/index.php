@@ -35,12 +35,11 @@
                 <th>Atanan Calisan(lar)</th>
                 <th>Durum</th>
                 <th>Baslangic Tarihi</th>
-                <th></th>
             </tr>
             </thead>
             <tbody>
             <?php foreach ($jobs as $job): ?>
-                <tr>
+                <tr data-href="<?= Url::to('/jobs/show') ?>?id=<?= $job['id'] ?>">
                     <td><span class="badge bg-secondary">#<?= $job['id'] ?></span></td>
                     <td>
                         <strong><?= htmlspecialchars($job['customer_name'] ?? '-') ?></strong>
@@ -55,7 +54,6 @@
                     </td>
                     <td><span class="badge <?= $statusBadgeClass[$job['status']] ?? 'bg-secondary' ?>"><?= htmlspecialchars($statusLabels[$job['status']] ?? $job['status']) ?></span></td>
                     <td><?= htmlspecialchars($job['start_date'] ?? '-') ?></td>
-                    <td><a href="<?= Url::to('/jobs/show') ?>?id=<?= $job['id'] ?>" class="btn btn-sm btn-outline-primary">Goruntule / Duzenle</a></td>
                 </tr>
             <?php endforeach; ?>
             </tbody>

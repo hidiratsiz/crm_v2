@@ -24,6 +24,10 @@ body {
     display: none;
 }
 
+tr[data-href] {
+    cursor: pointer;
+}
+
 @media (max-width: 767.98px) {
     .mobile-topbar {
         display: flex;

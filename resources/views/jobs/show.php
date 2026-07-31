@@ -39,25 +39,33 @@ $statusBadgeClass = [
 <div class="card p-3 shadow-sm mb-4">
     <h6 class="mb-3">Proje Finansmani</h6>
     <div class="row g-3 text-center mb-3">
-        <div class="col-6 col-md-3">
+        <div class="col-6 col-md-2">
             <div class="text-muted small">Sozlesme Tutari</div>
             <div class="fs-5 fw-bold">
                 <?= $contractAmount !== null ? '$' . number_format((float) $contractAmount, 2) : '-' ?>
             </div>
         </div>
-        <div class="col-6 col-md-3">
+        <div class="col-6 col-md-2">
             <div class="text-muted small">Alinan Odeme (Gelir)</div>
             <div class="fs-5 fw-bold text-success">$<?= number_format($paymentTotal, 2) ?></div>
         </div>
-        <div class="col-6 col-md-3">
+        <div class="col-6 col-md-2">
             <div class="text-muted small">Toplam Gider</div>
             <div class="fs-5 fw-bold text-danger">$<?= number_format($expenseTotal, 2) ?></div>
         </div>
-        <div class="col-6 col-md-3">
+        <div class="col-6 col-md-2">
+            <div class="text-muted small">Personel Gideri</div>
+            <div class="fs-5 fw-bold text-danger">$<?= number_format($laborTotal, 2) ?></div>
+        </div>
+        <div class="col-6 col-md-2">
             <div class="text-muted small">Kalan Bakiye</div>
             <div class="fs-5 fw-bold <?= ($balanceDue !== null && $balanceDue > 0) ? 'text-warning' : 'text-success' ?>">
                 <?= $balanceDue !== null ? '$' . number_format($balanceDue, 2) : '-' ?>
             </div>
+        </div>
+        <div class="col-6 col-md-2">
+            <div class="text-muted small">Net Kar</div>
+            <div class="fs-5 fw-bold <?= $netProfit >= 0 ? 'text-success' : 'text-danger' ?>">$<?= number_format($netProfit, 2) ?></div>
         </div>
     </div>
 
@@ -351,6 +359,60 @@ $statusBadgeClass = [
                 </select>
             </div>
             <div class="col-md-1"><button type="submit" class="btn btn-outline-primary w-100">Ekle</button></div>
+        </form>
+    <?php endif; ?>
+</div>
+
+<!-- Personel Giderleri -->
+<div class="card p-3 shadow-sm mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h6 class="mb-0">Personel Giderleri (Iscilik)</h6>
+        <strong>Toplam: $<?= number_format($laborTotal, 2) ?></strong>
+    </div>
+
+    <?php if (empty($laborCosts)): ?>
+        <p class="text-muted">Henuz bir personel gideri eklenmedi.</p>
+    <?php else: ?>
+        <table class="table table-sm mb-3">
+            <thead><tr><th>Tarih</th><th>Calisan</th><th>Not</th><th>Tutar</th><th></th></tr></thead>
+            <tbody>
+            <?php foreach ($laborCosts as $laborCost): ?>
+                <tr>
+                    <td><?= !empty($laborCost['work_date']) ? htmlspecialchars(date('d.m.Y', strtotime($laborCost['work_date']))) : '-' ?></td>
+                    <td><?= htmlspecialchars($laborCost['employee_name'] ?? '-') ?></td>
+                    <td><?= htmlspecialchars($laborCost['note'] ?? '-') ?></td>
+                    <td>$<?= number_format((float) $laborCost['amount'], 2) ?></td>
+                    <td>
+                        <?php if (Auth::can('customers.delete')): ?>
+                            <form action="<?= Url::to('/jobs/labor-costs/delete') ?>" method="post">
+                                <?= Csrf::field() ?>
+                                <input type="hidden" name="id" value="<?= $laborCost['id'] ?>">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Sil</button>
+                            </form>
+                        <?php endif; ?>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+    <?php endif; ?>
+
+    <?php if (Auth::can('customers.edit')): ?>
+        <form action="<?= Url::to('/jobs/labor-costs/add') ?>" method="post" class="row g-2">
+            <?= Csrf::field() ?>
+            <input type="hidden" name="id" value="<?= $job['id'] ?>">
+            <div class="col-md-2"><input type="date" name="work_date" class="form-control" value="<?= date('Y-m-d') ?>"></div>
+            <div class="col-md-3">
+                <select name="user_id" class="form-select">
+                    <option value="">Calisan secin...</option>
+                    <?php foreach ($availableEmployees as $emp): ?>
+                        <option value="<?= $emp['id'] ?>"><?= htmlspecialchars($emp['name']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="col-md-3"><input type="text" name="note" class="form-control" placeholder="Not (orn. 2 gunluk yevmiye)"></div>
+            <div class="col-md-2"><input type="text" name="amount" class="form-control" placeholder="Tutar $" required></div>
+            <div class="col-md-2"><button type="submit" class="btn btn-outline-primary w-100">Ekle</button></div>
         </form>
     <?php endif; ?>
 </div>

@@ -22,17 +22,15 @@
                 <th>Musteri</th>
                 <th>Durum</th>
                 <th>Tarih</th>
-                <th></th>
             </tr>
             </thead>
             <tbody>
             <?php foreach ($projects as $project): ?>
-                <tr>
+                <tr data-href="<?= Url::to('/projects/show') ?>?id=<?= $project['id'] ?>">
                     <td><?= htmlspecialchars($project['name']) ?></td>
                     <td><a href="<?= Url::to('/customers/edit') ?>?id=<?= $project['customer_id'] ?>"><?= htmlspecialchars($project['customer_name']) ?></a></td>
                     <td><span class="badge <?= $statusBadgeClass[$project['status']] ?? 'bg-secondary' ?>"><?= htmlspecialchars($statusLabels[$project['status']] ?? $project['status']) ?></span></td>
                     <td><?= htmlspecialchars($project['created_at']) ?></td>
-                    <td><a href="<?= Url::to('/projects/show') ?>?id=<?= $project['id'] ?>" class="btn btn-sm btn-outline-primary">Tekliflere Git</a></td>
                 </tr>
             <?php endforeach; ?>
             </tbody>

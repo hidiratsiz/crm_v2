@@ -30,15 +30,12 @@
             <tr><td colspan="5" class="text-center text-muted py-4">Kayit bulunamadi.</td></tr>
         <?php endif; ?>
         <?php foreach ($customers as $c): ?>
-            <tr>
+            <tr <?= Auth::can('customers.edit') ? 'data-href="' . Url::to('/customers/edit') . '?id=' . $c['id'] . '"' : '' ?>>
                 <td><?= htmlspecialchars($c['name']) ?></td>
                 <td><?= htmlspecialchars($c['phone'] ?? '-') ?></td>
                 <td><?= htmlspecialchars($c['email'] ?? '-') ?></td>
                 <td><?= htmlspecialchars($c['address'] ?? '-') ?></td>
                 <td>
-                    <?php if (Auth::can('customers.edit')): ?>
-                        <a href="<?= Url::to('/customers/edit') ?>?id=<?= $c['id'] ?>" class="btn btn-sm btn-outline-secondary">Duzenle</a>
-                    <?php endif; ?>
                     <?php if (Auth::can('customers.delete')): ?>
                         <form action="<?= Url::to('/customers/delete') ?>" method="post" class="d-inline"
                               onsubmit="return confirm('Bu musteriyi silmek istediginizden emin misiniz?');">

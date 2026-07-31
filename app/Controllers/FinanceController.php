@@ -7,6 +7,7 @@ use App\Core\Controller;
 use App\Core\View;
 use App\Models\Expense;
 use App\Models\Job;
+use App\Models\LaborCost;
 use App\Models\Payment;
 
 /**
@@ -30,19 +31,22 @@ class FinanceController extends Controller
 
         $payments = Payment::allWithDetails($from, $to);
         $expenses = Expense::allWithDetails($from, $to);
+        $laborCosts = LaborCost::allWithDetails($from, $to);
 
         $totalIncome = array_sum(array_map(fn ($p) => (float) $p['amount'], $payments));
         $totalExpense = array_sum(array_map(fn ($e) => (float) $e['amount'], $expenses));
+        $totalLabor = array_sum(array_map(fn ($l) => (float) $l['amount'], $laborCosts));
 
         echo View::renderWithLayout('finance/index', [
             'from' => $from,
             'to' => $to,
             'totalIncome' => $totalIncome,
             'totalExpense' => $totalExpense,
-            'net' => $totalIncome - $totalExpense,
+            'totalLabor' => $totalLabor,
+            'net' => $totalIncome - $totalExpense - $totalLabor,
             'employeeFinance' => $this->buildEmployeeFinance($payments, $expenses),
-            'jobSummary' => $this->buildJobSummary($payments, $expenses),
-            'transactions' => $this->buildTransactions($payments, $expenses),
+            'jobSummary' => $this->buildJobSummary($payments, $expenses, $laborCosts),
+            'transactions' => $this->buildTransactions($payments, $expenses, $laborCosts),
         ]);
     }
 
@@ -87,36 +91,38 @@ class FinanceController extends Controller
      * One row per job that has at least one payment/expense in range:
      * customer/project name, income, expense, contract amount, balance.
      */
-    private function buildJobSummary(array $payments, array $expenses): array
+    private function buildJobSummary(array $payments, array $expenses, array $laborCosts): array
     {
         $byJob = [];
 
-        foreach ($payments as $payment) {
-            $jobId = (int) $payment['job_id'];
+        $ensureRow = static function (array &$byJob, array $item): int {
+            $jobId = (int) $item['job_id'];
             if (!isset($byJob[$jobId])) {
                 $byJob[$jobId] = [
                     'job_id' => $jobId,
-                    'customer_name' => $payment['customer_name'],
-                    'project_name' => $payment['project_name'],
+                    'customer_name' => $item['customer_name'],
+                    'project_name' => $item['project_name'],
                     'income' => 0.0,
                     'expense' => 0.0,
+                    'labor' => 0.0,
                 ];
             }
+            return $jobId;
+        };
+
+        foreach ($payments as $payment) {
+            $jobId = $ensureRow($byJob, $payment);
             $byJob[$jobId]['income'] += (float) $payment['amount'];
         }
 
         foreach ($expenses as $expense) {
-            $jobId = (int) $expense['job_id'];
-            if (!isset($byJob[$jobId])) {
-                $byJob[$jobId] = [
-                    'job_id' => $jobId,
-                    'customer_name' => $expense['customer_name'],
-                    'project_name' => $expense['project_name'],
-                    'income' => 0.0,
-                    'expense' => 0.0,
-                ];
-            }
+            $jobId = $ensureRow($byJob, $expense);
             $byJob[$jobId]['expense'] += (float) $expense['amount'];
+        }
+
+        foreach ($laborCosts as $laborCost) {
+            $jobId = $ensureRow($byJob, $laborCost);
+            $byJob[$jobId]['labor'] += (float) $laborCost['amount'];
         }
 
         $contractAmounts = Job::contractAmountsForJobs(array_keys($byJob));
@@ -124,6 +130,7 @@ class FinanceController extends Controller
         foreach ($byJob as $jobId => &$row) {
             $row['contract_amount'] = $contractAmounts[$jobId] ?? null;
             $row['balance'] = $row['contract_amount'] !== null ? ($row['contract_amount'] - $row['income']) : null;
+            $row['net'] = $row['income'] - $row['expense'] - $row['labor'];
         }
         unset($row);
 
@@ -138,7 +145,7 @@ class FinanceController extends Controller
      * first) so the whole company's cash movement can be scanned in order,
      * not as two separate tables.
      */
-    private function buildTransactions(array $payments, array $expenses): array
+    private function buildTransactions(array $payments, array $expenses, array $laborCosts): array
     {
         $paymentMethodLabels = ['cash' => 'Nakit', 'card' => 'Kredi Karti', 'bank_transfer' => 'Havale/EFT', 'check' => 'Cek'];
         $transactions = [];
@@ -168,6 +175,20 @@ class FinanceController extends Controller
                 'who' => $expense['created_by_name'],
                 'label' => $expense['category'] ?: 'Gider',
                 'note' => $expense['description'],
+            ];
+        }
+
+        foreach ($laborCosts as $laborCost) {
+            $transactions[] = [
+                'type' => 'labor',
+                'date' => $laborCost['work_date'],
+                'amount' => (float) $laborCost['amount'],
+                'job_id' => $laborCost['job_id'],
+                'customer_name' => $laborCost['customer_name'],
+                'project_name' => $laborCost['project_name'],
+                'who' => $laborCost['employee_name'],
+                'label' => 'Personel Gideri',
+                'note' => $laborCost['note'],
             ];
         }
 

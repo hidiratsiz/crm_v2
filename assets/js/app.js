@@ -4,6 +4,18 @@
 document.addEventListener('DOMContentLoaded', function () {
     console.log('JobPro yuklendi.');
 
+    // Tiklanabilir tablo satirlari: data-href tasiyan <tr>'ye tiklaninca o
+    // adrese gider — satirin icindeki link/buton/form elemanlarina yapilan
+    // tiklamalar haric (onlar kendi islerini yapmaya devam eder).
+    document.querySelectorAll('tr[data-href]').forEach(function (row) {
+        row.addEventListener('click', function (e) {
+            if (e.target.closest('a, button, form, input, select, label')) {
+                return;
+            }
+            window.location.href = row.getAttribute('data-href');
+        });
+    });
+
     // Mobil hamburger menu: sidebar varsayilan olarak gizli, buton/backdrop ile ac-kapat.
     var toggleBtn = document.getElementById('sidebar-toggle');
     var sidebar = document.getElementById('sidebar');

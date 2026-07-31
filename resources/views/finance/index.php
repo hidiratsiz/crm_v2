@@ -26,19 +26,25 @@
 
 <!-- Ozet Kartlari -->
 <div class="row g-3 mb-4">
-    <div class="col-6 col-md-4">
+    <div class="col-6 col-md-3">
         <div class="card p-3 shadow-sm text-center h-100">
             <div class="text-muted small">Toplam Gelir</div>
             <div class="fs-4 fw-bold text-success">$<?= number_format($totalIncome, 2) ?></div>
         </div>
     </div>
-    <div class="col-6 col-md-4">
+    <div class="col-6 col-md-3">
         <div class="card p-3 shadow-sm text-center h-100">
             <div class="text-muted small">Toplam Gider</div>
             <div class="fs-4 fw-bold text-danger">$<?= number_format($totalExpense, 2) ?></div>
         </div>
     </div>
-    <div class="col-12 col-md-4">
+    <div class="col-6 col-md-3">
+        <div class="card p-3 shadow-sm text-center h-100">
+            <div class="text-muted small">Personel Gideri</div>
+            <div class="fs-4 fw-bold text-danger">$<?= number_format($totalLabor, 2) ?></div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
         <div class="card p-3 shadow-sm text-center h-100">
             <div class="text-muted small">Net</div>
             <div class="fs-4 fw-bold <?= $net >= 0 ? 'text-success' : 'text-danger' ?>">$<?= number_format($net, 2) ?></div>
@@ -80,7 +86,7 @@
         <p class="text-muted mb-0">Bu donemde kayitli bir odeme/gider yok.</p>
     <?php else: ?>
         <table class="table table-sm mb-0">
-            <thead><tr><th>Musteri / Is</th><th class="text-end">Sozlesme</th><th class="text-end">Gelir</th><th class="text-end">Gider</th><th class="text-end">Bakiye</th><th></th></tr></thead>
+            <thead><tr><th>Musteri / Is</th><th class="text-end">Sozlesme</th><th class="text-end">Gelir</th><th class="text-end">Gider</th><th class="text-end">Personel</th><th class="text-end">Bakiye</th><th class="text-end">Net</th><th></th></tr></thead>
             <tbody>
             <?php foreach ($jobSummary as $row): ?>
                 <tr>
@@ -91,7 +97,9 @@
                     <td class="text-end"><?= $row['contract_amount'] !== null ? '$' . number_format($row['contract_amount'], 2) : '-' ?></td>
                     <td class="text-end text-success">$<?= number_format($row['income'], 2) ?></td>
                     <td class="text-end text-danger">$<?= number_format($row['expense'], 2) ?></td>
+                    <td class="text-end text-danger">$<?= number_format($row['labor'], 2) ?></td>
                     <td class="text-end fw-bold"><?= $row['balance'] !== null ? '$' . number_format($row['balance'], 2) : '-' ?></td>
+                    <td class="text-end fw-bold <?= $row['net'] >= 0 ? 'text-success' : 'text-danger' ?>">$<?= number_format($row['net'], 2) ?></td>
                     <td><a href="<?= Url::to('/jobs/show') ?>?id=<?= $row['job_id'] ?>" class="btn btn-sm btn-outline-secondary">Ise Git</a></td>
                 </tr>
             <?php endforeach; ?>
@@ -115,6 +123,8 @@
                     <td>
                         <?php if ($tx['type'] === 'income'): ?>
                             <span class="badge bg-success">Gelir</span>
+                        <?php elseif ($tx['type'] === 'labor'): ?>
+                            <span class="badge bg-warning text-dark">Personel</span>
                         <?php else: ?>
                             <span class="badge bg-danger">Gider</span>
                         <?php endif; ?>

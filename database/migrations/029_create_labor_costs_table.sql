@@ -1,0 +1,15 @@
+CREATE TABLE IF NOT EXISTS labor_costs (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    job_id INT UNSIGNED NOT NULL,
+    user_id INT UNSIGNED NULL,
+    amount DECIMAL(10,2) NOT NULL,
+    work_date DATE NULL,
+    note VARCHAR(255) NULL,
+    created_by INT UNSIGNED NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP NULL,
+    FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+    INDEX idx_labor_costs_job (job_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

@@ -11,6 +11,7 @@ use App\Models\Customer;
 use App\Models\Estimate;
 use App\Models\Expense;
 use App\Models\Job;
+use App\Models\LaborCost;
 use App\Models\Payment;
 use App\Models\Project;
 use App\Models\User;
@@ -57,8 +58,10 @@ class JobController extends Controller
 
         $expenses = Expense::allForJob($job['id']);
         $payments = Payment::allForJob($job['id']);
+        $laborCosts = LaborCost::allForJob($job['id']);
         $expenseTotal = Expense::totalForJob($job['id']);
         $paymentTotal = Payment::totalForJob($job['id']);
+        $laborTotal = LaborCost::totalForJob($job['id']);
         $contractAmount = $estimate['amount'] ?? null;
 
         echo View::renderWithLayout('jobs/show', [
@@ -71,8 +74,11 @@ class JobController extends Controller
             'expenseTotal' => $expenseTotal,
             'payments' => $payments,
             'paymentTotal' => $paymentTotal,
+            'laborCosts' => $laborCosts,
+            'laborTotal' => $laborTotal,
             'contractAmount' => $contractAmount,
             'balanceDue' => $contractAmount !== null ? ((float) $contractAmount - $paymentTotal) : null,
+            'netProfit' => $paymentTotal - $expenseTotal - $laborTotal,
             'employeeFinance' => $this->buildEmployeeFinance($payments, $expenses),
             'checklist' => ChecklistItem::allForJob($job['id']),
         ]);
@@ -355,6 +361,67 @@ class JobController extends Controller
 
         Payment::softDelete((int) $payment['id']);
         $this->redirect('/jobs/show?id=' . $payment['job_id']);
+    }
+
+    // ---- Labor costs (personel gideri) ----
+
+    public function addLaborCost(): void
+    {
+        if (!Auth::can('customers.edit')) {
+            $this->forbidden();
+            return;
+        }
+
+        $job = $this->loadJobOr404();
+        if (!$job) {
+            return;
+        }
+
+        if (!Csrf::verify($this->input('csrf_token'))) {
+            $this->redirect('/jobs/show?id=' . $job['id']);
+            return;
+        }
+
+        $amountRaw = (string) $this->input('amount');
+        $amount = (float) preg_replace('/[^0-9.\-]/', '', $amountRaw);
+        $userId = (int) $this->input('user_id');
+        $workDate = trim((string) $this->input('work_date'));
+
+        if ($amount > 0) {
+            LaborCost::create([
+                'job_id' => $job['id'],
+                'user_id' => $userId > 0 ? $userId : null,
+                'amount' => $amount,
+                'work_date' => $workDate !== '' ? $workDate : date('Y-m-d'),
+                'note' => $this->input('note'),
+                'created_by' => Auth::id(),
+            ]);
+        }
+
+        $this->redirect('/jobs/show?id=' . $job['id']);
+    }
+
+    public function deleteLaborCost(): void
+    {
+        if (!Auth::can('customers.delete')) {
+            $this->forbidden();
+            return;
+        }
+
+        $laborCost = LaborCost::find((int) $this->input('id'));
+        if (!$laborCost) {
+            http_response_code(404);
+            echo View::renderWithLayout('errors/404');
+            return;
+        }
+
+        if (!Csrf::verify($this->input('csrf_token'))) {
+            $this->redirect('/jobs/show?id=' . $laborCost['job_id']);
+            return;
+        }
+
+        LaborCost::softDelete((int) $laborCost['id']);
+        $this->redirect('/jobs/show?id=' . $laborCost['job_id']);
     }
 
     // ---- Checklist ----
