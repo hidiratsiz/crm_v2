@@ -51,6 +51,8 @@ $router->post('/jobs/assign-employee', [JobController::class, 'assignEmployee'],
 $router->post('/jobs/unassign-employee', [JobController::class, 'unassignEmployee'], [AuthMiddleware::class]);
 $router->post('/jobs/expenses/add', [JobController::class, 'addExpense'], [AuthMiddleware::class]);
 $router->post('/jobs/expenses/delete', [JobController::class, 'deleteExpense'], [AuthMiddleware::class]);
+$router->post('/jobs/payments/add', [JobController::class, 'addPayment'], [AuthMiddleware::class]);
+$router->post('/jobs/payments/delete', [JobController::class, 'deletePayment'], [AuthMiddleware::class]);
 $router->post('/jobs/checklist/add', [JobController::class, 'addChecklistItem'], [AuthMiddleware::class]);
 $router->post('/jobs/checklist/toggle', [JobController::class, 'toggleChecklistItem'], [AuthMiddleware::class]);
 $router->post('/jobs/checklist/delete', [JobController::class, 'deleteChecklistItem'], [AuthMiddleware::class]);

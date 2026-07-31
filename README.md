@@ -305,3 +305,17 @@ Sistem hem müşteriyi/projeyi/iş tanımını hem de randevu tarihini ve saatin
 **Elle ekleme:** Proje sayfasında da (AI kullanmadan) tarih/saat/not girerek elle bir randevu ekleyebilir, durumunu (Planlandı/Tamamlandı/İptal) değiştirebilir veya silebilirsiniz.
 
 **Takvimde görünüm:** Randevular Takvim sayfasında İşlerden ayrı, mor renkli bir etiketle ("İnceleme: Müşteri Adı") görünür — böylece bir günde hem hangi işlerin hem de hangi inceleme ziyaretlerinin planlı olduğu tek yerden görülür. Bu bilgi, İşler gibi `customers.view` yetkisi gerektirir; Employee rolü göremez.
+
+## Proje Finansmanı
+
+Her İş (Job) sayfasında bir **Proje Finansmanı** kartı bulunur:
+
+- **Sözleşme Tutarı** — işin bağlı olduğu kabul edilmiş teklifin tutarı.
+- **Alınan Ödeme (Gelir)** — o işe kaydedilen tüm ödemelerin toplamı.
+- **Toplam Gider** — o işe kaydedilen tüm giderlerin toplamı.
+- **Kalan Bakiye** — Sözleşme Tutarı − Alınan Ödeme.
+- **Kimde Ne Kadar Var** — her çalışanın bu iş için aldığı ödeme ile yaptığı gideri netleştirerek, o an elinde/üzerinde kalan tutarı gösterir (örn. sahada tahsilat yapıp aynı ziyarette malzeme parası ödeyen bir çalışanın net bakiyesi).
+
+**Ödeme ekleme:** İş sayfasındaki "Ödemeler" formundan tutar, yöntem (Nakit / Kredi Kartı / Havale-EFT / Çek), isteğe bağlı bir not ve "kim aldı" bilgisi girilerek eklenir. Giderler formuna da benzer şekilde "kim yaptı" seçimi eklendi.
+
+**AI Hızlı Kayıt ile:** "Jane'in isine 500 dolar odeme alindi" gibi bir komutla da ödeme kaydedilebilir — mevcut "gider ekle" komutuyla aynı mantık.

@@ -12,6 +12,7 @@ use App\Models\Customer;
 use App\Models\Estimate;
 use App\Models\Expense;
 use App\Models\Job;
+use App\Models\Payment;
 use App\Models\Project;
 use App\Models\User;
 use App\Services\AiIntakeParser;
@@ -237,6 +238,9 @@ class QuickCaptureController extends Controller
             case 'add_expense':
                 $this->handleAddExpense($job, $parsed);
                 break;
+            case 'add_payment':
+                $this->handleAddPayment($job, $parsed);
+                break;
             case 'add_checklist_item':
                 $this->handleAddChecklistItem($job, $parsed);
                 break;
@@ -406,6 +410,26 @@ class QuickCaptureController extends Controller
         ]);
 
         $message = "{$job['customer_name']} isine \${$this->formatAmount($amount)} tutarinda gider eklendi.";
+        $this->renderCommandResult(true, $message, $job);
+    }
+
+    private function handleAddPayment(array $job, array $parsed): void
+    {
+        $amount = $parsed['payment_amount'] ?? null;
+        if (empty($amount) || $amount <= 0) {
+            $this->renderCommandResult(false, 'Odeme tutari metinden anlasilamadi. Lutfen tutari acikca belirtin (orn. "500 dolar").', $job);
+            return;
+        }
+
+        Payment::create([
+            'job_id' => $job['id'],
+            'amount' => $amount,
+            'method' => $parsed['payment_method'] ?? 'cash',
+            'note' => $parsed['payment_note'] ?? null,
+            'received_by' => Auth::id(),
+        ]);
+
+        $message = "{$job['customer_name']} isine \${$this->formatAmount($amount)} tutarinda odeme kaydedildi.";
         $this->renderCommandResult(true, $message, $job);
     }
 

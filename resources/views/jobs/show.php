@@ -32,6 +32,55 @@ $statusBadgeClass = [
     </span>
 </div>
 
+<!-- Proje Finansmani -->
+<div class="card p-3 shadow-sm mb-4">
+    <h6 class="mb-3">Proje Finansmani</h6>
+    <div class="row g-3 text-center mb-3">
+        <div class="col-6 col-md-3">
+            <div class="text-muted small">Sozlesme Tutari</div>
+            <div class="fs-5 fw-bold">
+                <?= $contractAmount !== null ? '$' . number_format((float) $contractAmount, 2) : '-' ?>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="text-muted small">Alinan Odeme (Gelir)</div>
+            <div class="fs-5 fw-bold text-success">$<?= number_format($paymentTotal, 2) ?></div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="text-muted small">Toplam Gider</div>
+            <div class="fs-5 fw-bold text-danger">$<?= number_format($expenseTotal, 2) ?></div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="text-muted small">Kalan Bakiye</div>
+            <div class="fs-5 fw-bold <?= ($balanceDue !== null && $balanceDue > 0) ? 'text-warning' : 'text-success' ?>">
+                <?= $balanceDue !== null ? '$' . number_format($balanceDue, 2) : '-' ?>
+            </div>
+        </div>
+    </div>
+
+    <?php if (!empty($employeeFinance)): ?>
+        <h6 class="mb-2 mt-3">Kimde Ne Kadar Var</h6>
+        <table class="table table-sm mb-0">
+            <thead><tr><th>Calisan</th><th class="text-end">Aldigi Odeme</th><th class="text-end">Yaptigi Gider</th><th class="text-end">Elinde Kalan</th></tr></thead>
+            <tbody>
+            <?php foreach ($employeeFinance as $row): ?>
+                <tr>
+                    <td><?= htmlspecialchars($row['name']) ?></td>
+                    <td class="text-end">$<?= number_format($row['received'], 2) ?></td>
+                    <td class="text-end">$<?= number_format($row['spent'], 2) ?></td>
+                    <td class="text-end fw-bold <?= $row['net'] > 0 ? 'text-warning' : ($row['net'] < 0 ? 'text-danger' : '') ?>">
+                        $<?= number_format($row['net'], 2) ?>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+        <small class="text-muted d-block mt-2">
+            "Elinde kalan" pozitifse o calisan musteriden aldigi paranin bir kismini henuz sirkete/kasaya teslim etmemis demektir.
+        </small>
+    <?php endif; ?>
+</div>
+
 <div class="row g-3 mb-4">
     <!-- Durum ve Baslangic Tarihi -->
     <div class="col-md-6">
@@ -192,13 +241,14 @@ $statusBadgeClass = [
         <p class="text-muted">Henuz bir gider eklenmedi.</p>
     <?php else: ?>
         <table class="table table-sm mb-3">
-            <thead><tr><th>Kategori</th><th>Aciklama</th><th>Tutar</th><th></th></tr></thead>
+            <thead><tr><th>Kategori</th><th>Aciklama</th><th>Tutar</th><th>Kim</th><th></th></tr></thead>
             <tbody>
             <?php foreach ($expenses as $expense): ?>
                 <tr>
                     <td><?= htmlspecialchars($expense['category'] ?? '-') ?></td>
                     <td><?= htmlspecialchars($expense['description'] ?? '-') ?></td>
                     <td>$<?= number_format((float) $expense['amount'], 2) ?></td>
+                    <td><?= htmlspecialchars($expense['created_by_name'] ?? '-') ?></td>
                     <td>
                         <?php if (Auth::can('customers.delete')): ?>
                             <form action="<?= Url::to('/jobs/expenses/delete') ?>" method="post">
@@ -218,9 +268,81 @@ $statusBadgeClass = [
         <form action="<?= Url::to('/jobs/expenses/add') ?>" method="post" class="row g-2">
             <?= Csrf::field() ?>
             <input type="hidden" name="id" value="<?= $job['id'] ?>">
-            <div class="col-md-3"><input type="text" name="category" class="form-control" placeholder="Kategori (orn. Malzeme)"></div>
-            <div class="col-md-5"><input type="text" name="description" class="form-control" placeholder="Aciklama"></div>
+            <div class="col-md-2"><input type="text" name="category" class="form-control" placeholder="Kategori (orn. Malzeme)"></div>
+            <div class="col-md-4"><input type="text" name="description" class="form-control" placeholder="Aciklama"></div>
             <div class="col-md-2"><input type="text" name="amount" class="form-control" placeholder="Tutar $" required></div>
+            <div class="col-md-2">
+                <select name="performed_by" class="form-select">
+                    <option value="">Kim yapti? (Ben)</option>
+                    <?php foreach ($availableEmployees as $emp): ?>
+                        <option value="<?= $emp['id'] ?>"><?= htmlspecialchars($emp['name']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="col-md-2"><button type="submit" class="btn btn-outline-primary w-100">Ekle</button></div>
+        </form>
+    <?php endif; ?>
+</div>
+
+<!-- Odemeler -->
+<div class="card p-3 shadow-sm mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h6 class="mb-0">Odemeler</h6>
+        <strong>Toplam: $<?= number_format($paymentTotal, 2) ?></strong>
+    </div>
+
+    <?php
+    $paymentMethodLabels = ['cash' => 'Nakit', 'card' => 'Kredi Karti', 'bank_transfer' => 'Havale/EFT', 'check' => 'Cek'];
+    ?>
+
+    <?php if (empty($payments)): ?>
+        <p class="text-muted">Henuz bir odeme kaydedilmedi.</p>
+    <?php else: ?>
+        <table class="table table-sm mb-3">
+            <thead><tr><th>Tutar</th><th>Yontem</th><th>Not</th><th>Kim Aldi</th><th></th></tr></thead>
+            <tbody>
+            <?php foreach ($payments as $payment): ?>
+                <tr>
+                    <td>$<?= number_format((float) $payment['amount'], 2) ?></td>
+                    <td><?= htmlspecialchars($paymentMethodLabels[$payment['method']] ?? $payment['method']) ?></td>
+                    <td><?= htmlspecialchars($payment['note'] ?? '-') ?></td>
+                    <td><?= htmlspecialchars($payment['received_by_name'] ?? '-') ?></td>
+                    <td>
+                        <?php if (Auth::can('customers.delete')): ?>
+                            <form action="<?= Url::to('/jobs/payments/delete') ?>" method="post">
+                                <?= Csrf::field() ?>
+                                <input type="hidden" name="id" value="<?= $payment['id'] ?>">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Sil</button>
+                            </form>
+                        <?php endif; ?>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+    <?php endif; ?>
+
+    <?php if (Auth::can('customers.edit')): ?>
+        <form action="<?= Url::to('/jobs/payments/add') ?>" method="post" class="row g-2">
+            <?= Csrf::field() ?>
+            <input type="hidden" name="id" value="<?= $job['id'] ?>">
+            <div class="col-md-2"><input type="text" name="amount" class="form-control" placeholder="Tutar $" required></div>
+            <div class="col-md-2">
+                <select name="method" class="form-select">
+                    <?php foreach ($paymentMethodLabels as $value => $label): ?>
+                        <option value="<?= $value ?>"><?= $label ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="col-md-3"><input type="text" name="note" class="form-control" placeholder="Not (istege bagli)"></div>
+            <div class="col-md-3">
+                <select name="received_by" class="form-select">
+                    <option value="">Kim aldi? (Ben)</option>
+                    <?php foreach ($availableEmployees as $emp): ?>
+                        <option value="<?= $emp['id'] ?>"><?= htmlspecialchars($emp['name']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
             <div class="col-md-2"><button type="submit" class="btn btn-outline-primary w-100">Ekle</button></div>
         </form>
     <?php endif; ?>

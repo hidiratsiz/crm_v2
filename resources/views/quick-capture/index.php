@@ -12,6 +12,7 @@
         <li>"Jane'in isine Alex gitsin" — calisan atar (+ otomatik e-posta bildirimi)</li>
         <li>"Alex'i Jane'in isinden cikar" — atamayi kaldirir</li>
         <li>"Jane'in isine 200 dolar malzeme gideri ekle" — gider ekler</li>
+        <li>"Jane'in isine 500 dolar odeme alindi" — odeme/tahsilat kaydeder</li>
         <li>"Jane'in isine 'eski dolaplari sok' adimini ekle" — kontrol listesine adim ekler</li>
         <li>"Jane'in isi 1 Agustos'ta baslasin" — baslangic tarihi belirler</li>
         <li>"Jane'in isi 1 Agustos saat 14:00'te baslasin, 2 saat surecek" — saatlik is icin saat/sure de belirler</li>

@@ -32,11 +32,20 @@ class Expense
         return $row ?: null;
     }
 
+    /**
+     * All expenses for a job, newest first, with the spending employee's
+     * name already joined in (created_by_name) so views never need a
+     * separate lookup just to show "kim yapti".
+     */
     public static function allForJob(int $jobId): array
     {
         $db = Database::connection();
         $stmt = $db->prepare(
-            'SELECT * FROM expenses WHERE job_id = :job_id AND deleted_at IS NULL ORDER BY created_at DESC'
+            'SELECT e.*, u.name AS created_by_name
+             FROM expenses e
+             LEFT JOIN users u ON u.id = e.created_by
+             WHERE e.job_id = :job_id AND e.deleted_at IS NULL
+             ORDER BY e.created_at DESC'
         );
         $stmt->execute(['job_id' => $jobId]);
         return $stmt->fetchAll();

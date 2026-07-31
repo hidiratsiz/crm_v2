@@ -90,6 +90,17 @@ istiyorsa, bunlardan birini sec:
   -> target_customer_name: "Jane", expense_category: "Malzeme",
      expense_description: (varsa detay), expense_amount: 200.00
 
+- "add_payment": Musteriden bir ise odeme/tahsilat alindigini kaydetme
+  komutu (gider degil, GELIR — musteriden PARA ALINDIGINDA kullanilir).
+  Ornek: "Jane'in isine 500 dolar odeme alindi", "Jane'den 1000 dolar
+  nakit tahsil ettik", "Jane 200 dolar kredi kartiyla odedi"
+  -> target_customer_name: "Jane", payment_amount: 500.00,
+     payment_method: metinde "nakit" geciyorsa "cash", "kart"/"kredi
+     karti" geciyorsa "card", "havale"/"eft"/"banka" geciyorsa
+     "bank_transfer", "cek" geciyorsa "check", hicbiri belirtilmemisse
+     null (form varsayilan olarak nakit sayacak)
+  -> payment_note: varsa kisa bir not, yoksa null
+
 - "add_checklist_item": Bir ise yapilacak bir adim ekleme komutu.
   Ornek: "Jane'in isine 'eski dolaplari sok' adimini ekle"
   -> target_customer_name: "Jane", checklist_description: "Eski dolaplari sok"
@@ -139,7 +150,7 @@ Metni oku ve SADECE gecerli JSON olarak don — baska hicbir metin, aciklama
 veya markdown isareti ekleme:
 
 {
-  "intent": "new_capture" | "assign_employee" | "unassign_employee" | "add_expense" | "add_checklist_item" | "set_start_date" | "change_job_status" | "update_estimate" | "send_estimate",
+  "intent": "new_capture" | "assign_employee" | "unassign_employee" | "add_expense" | "add_payment" | "add_checklist_item" | "set_start_date" | "change_job_status" | "update_estimate" | "send_estimate",
 
   "customer_name": "musterinin adi, bulunamazsa null (sadece new_capture icin)",
   "phone": "telefon numarasi (sadece rakamlar/+ isareti), bulunamazsa null",
@@ -165,6 +176,9 @@ veya markdown isareti ekleme:
   "expense_category": "TUR 2 icin (add_expense): gider kategorisi, yoksa null",
   "expense_description": "TUR 2 icin (add_expense): gider aciklamasi, yoksa null",
   "expense_amount": "TUR 2 icin (add_expense): SAYI olarak tutar, yoksa null",
+  "payment_amount": "TUR 2 icin (add_payment): SAYI olarak tutar, yoksa null",
+  "payment_method": "TUR 2 icin (add_payment): cash|card|bank_transfer|check, belirtilmemisse null",
+  "payment_note": "TUR 2 icin (add_payment): kisa not, yoksa null",
   "checklist_description": "TUR 2 icin (add_checklist_item): adim aciklamasi, yoksa null",
   "start_date": "TUR 2 icin (set_start_date): YYYY-MM-DD formatinda tarih, yoksa null",
   "start_time": "TUR 2 icin (set_start_date): HH:MM formatinda saat (sadece is saatli/randevu tarzinda ise), yoksa null",
@@ -244,7 +258,7 @@ PROMPT;
         // since that path never mutates existing data (it only creates).
         $validIntents = [
             'new_capture', 'assign_employee', 'unassign_employee', 'add_expense',
-            'add_checklist_item', 'set_start_date', 'change_job_status',
+            'add_payment', 'add_checklist_item', 'set_start_date', 'change_job_status',
             'update_estimate', 'send_estimate',
         ];
         $intent = $parsed['intent'] ?? 'new_capture';
@@ -256,6 +270,10 @@ PROMPT;
         $parsed['expense_category'] = $parsed['expense_category'] ?? null;
         $parsed['expense_description'] = $parsed['expense_description'] ?? null;
         $parsed['expense_amount'] = self::normalizeAmount($parsed['expense_amount'] ?? null);
+        $parsed['payment_amount'] = self::normalizeAmount($parsed['payment_amount'] ?? null);
+        $validPaymentMethods = ['cash', 'card', 'bank_transfer', 'check'];
+        $parsed['payment_method'] = in_array($parsed['payment_method'] ?? null, $validPaymentMethods, true) ? $parsed['payment_method'] : null;
+        $parsed['payment_note'] = $parsed['payment_note'] ?? null;
         $parsed['checklist_description'] = $parsed['checklist_description'] ?? null;
         $parsed['start_date'] = self::normalizeDate($parsed['start_date'] ?? null);
         $parsed['start_time'] = self::normalizeTime($parsed['start_time'] ?? null);
