@@ -12,6 +12,7 @@ use App\Models\Job;
 use App\Models\Project;
 use App\Models\ServiceModule;
 use App\Models\ServiceModuleField;
+use App\Services\EstimateMailer;
 use App\Services\PricingEngine;
 
 class EstimateController extends Controller
@@ -330,6 +331,37 @@ class EstimateController extends Controller
         ]);
 
         $this->redirect('/jobs/show?id=' . $jobId);
+    }
+
+    /**
+     * Emails the estimate to the customer on file for its project. This is
+     * the manual "button" path — the same action is also reachable via a
+     * Quick Capture voice command ("David K'ye teklifi gonder"), which goes
+     * through EstimateMailer directly from QuickCaptureController.
+     */
+    public function sendToCustomer(): void
+    {
+        if (!Auth::can('customers.edit')) {
+            $this->forbidden();
+            return;
+        }
+
+        $id = (int) $this->input('id');
+        $estimate = Estimate::find($id);
+
+        if (!$estimate) {
+            http_response_code(404);
+            echo View::renderWithLayout('errors/404');
+            return;
+        }
+
+        if (!Csrf::verify($this->input('csrf_token'))) {
+            $this->redirect('/projects/show?id=' . $estimate['project_id']);
+            return;
+        }
+
+        $result = EstimateMailer::sendToCustomer($id);
+        $this->redirect('/projects/show?id=' . $estimate['project_id'] . '&mail_sent=' . ($result['success'] ? '1' : '0'));
     }
 
     private function normalizeAmountInput(?string $amount): ?float

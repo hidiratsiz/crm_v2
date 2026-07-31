@@ -1,4 +1,11 @@
 <?php use App\Core\Auth; use App\Core\Csrf; use App\Core\Url; ?>
+<?php if (isset($_GET['mail_sent'])): ?>
+    <?php if ($_GET['mail_sent'] === '1'): ?>
+        <div class="alert alert-success">Teklif musteriye e-posta ile gonderildi.</div>
+    <?php else: ?>
+        <div class="alert alert-danger">Teklif gonderilemedi — musterinin e-postasi kayitli mi kontrol edin.</div>
+    <?php endif; ?>
+<?php endif; ?>
 <div class="d-flex justify-content-between align-items-start mb-4">
     <div>
         <h2 class="mb-1"><?= htmlspecialchars($project['name']) ?></h2>
@@ -136,6 +143,14 @@
                             </select>
                         </form>
                         <a href="<?= Url::to('/estimates/edit') ?>?id=<?= $estimate['id'] ?>" class="btn btn-sm btn-outline-secondary">Duzenle</a>
+
+                        <?php if (!empty($customer['email'])): ?>
+                            <form action="<?= Url::to('/estimates/send-to-customer') ?>" method="post" class="d-inline">
+                                <?= Csrf::field() ?>
+                                <input type="hidden" name="id" value="<?= $estimate['id'] ?>">
+                                <button type="submit" class="btn btn-sm btn-outline-primary">Musteriye Gonder</button>
+                            </form>
+                        <?php endif; ?>
 
                         <?php if ($estimate['status'] === 'accepted'): ?>
                             <?php if (isset($jobsByEstimate[$estimate['id']])): ?>

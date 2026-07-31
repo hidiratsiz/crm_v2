@@ -44,6 +44,41 @@ class Estimate
         return $stmt->fetchAll();
     }
 
+    /**
+     * The project's most recent DRAFT estimate — used by Quick Capture's
+     * "teklifi duzenle" voice command. Deliberately restricted to 'draft':
+     * a voice command should never silently overwrite an estimate that's
+     * already been sent to or accepted by the customer.
+     */
+    public static function mostRecentDraftForProject(int $projectId): ?array
+    {
+        $db = Database::connection();
+        $stmt = $db->prepare(
+            "SELECT * FROM estimates WHERE project_id = :pid AND status = 'draft' AND deleted_at IS NULL
+             ORDER BY created_at DESC LIMIT 1"
+        );
+        $stmt->execute(['pid' => $projectId]);
+        $row = $stmt->fetch();
+        return $row ?: null;
+    }
+
+    /**
+     * The project's most recent estimate regardless of status — used by
+     * Quick Capture's "teklifi gonder" voice command, since you might
+     * legitimately want to (re)send an estimate that's already marked sent.
+     */
+    public static function mostRecentForProject(int $projectId): ?array
+    {
+        $db = Database::connection();
+        $stmt = $db->prepare(
+            'SELECT * FROM estimates WHERE project_id = :pid AND deleted_at IS NULL
+             ORDER BY created_at DESC LIMIT 1'
+        );
+        $stmt->execute(['pid' => $projectId]);
+        $row = $stmt->fetch();
+        return $row ?: null;
+    }
+
     public static function update(int $id, array $data): void
     {
         $db = Database::connection();

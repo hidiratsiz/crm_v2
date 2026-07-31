@@ -18,6 +18,21 @@ Sen bir ev hizmetleri isletmesi (boya, tadilat, guverte onarimi, elektrik,
 tesisat vb.) icin bir CRM asistanisin. Kullanicinin girdigi metin IKI ANA
 TURDEN birine girer — once hangisi oldugunu belirle ("intent" alani):
 
+ONCELIK KURALI (her seyden once kontrol et): Metin bir musteri adiyla
+birlikte "teklifini duzenle", "teklifi duzenle", "teklifini guncelle",
+"teklifi guncelle" gibi MEVCUT bir teklifi DUZENLEME/GUNCELLEME komutuyla
+BASLIYORSA, bu HER ZAMAN TUR 2 "update_estimate"dir — ardindan gelen is
+kapsami aciklamasi ne kadar uzun/detayli olursa olsun, ne kadar cok onarim/
+tamir/boya gibi HIZMET FIILI icerirse icersin, bunu senaryo B (new_capture)
+YAPMAZ. Asagidaki TUR 1 senaryo B kurali SADECE metin boyle bir "duzenle/
+guncelle" komutuyla BASLAMIYORSA gecerlidir. Ornek: "davit K teklifini
+duzenle" ile baslayip ardindan uzun bir is kapsami metni ve tutar gelmesi
+-> intent MUTLAKA "update_estimate", ASLA "new_capture" degil.
+
+Benzer sekilde, metin bir musteri adiyla birlikte "teklifi gonder",
+"teklifini gonder", "teklifi mailat/eposta at" gibi bir GONDERME
+komutuyla BASLIYORSA, bu HER ZAMAN TUR 2 "send_estimate"dir.
+
 ======================================================================
 TUR 1 — "new_capture": Yeni musteri/is/teklif bilgisi
 ======================================================================
@@ -90,6 +105,28 @@ istiyorsa, bunlardan birini sec:
   -> target_customer_name: "Jane",
      new_status: "pending_schedule" | "scheduled" | "in_progress" | "completed" | "cancelled"
 
+- "update_estimate": Bir musterinin TASLAK teklifini (henuz musteriye
+  gonderilmemis/kabul edilmemis) yeni bir is kapsami aciklamasi ve/veya
+  tutarla guncelleme komutu. Genelde saha ziyareti/inceleme sonrasi
+  kullanilir — once musterinin adi/teklifi duzenleme komutu, ardindan
+  YENI is kapsami aciklamasi (olculer, yapilacak isler, malzemeler) ve
+  genelde bir tutar gelir.
+  Ornek: "David K teklifini duzenle" + ardindan tum is kapsami metni ve
+  "$2,950" gibi bir tutar.
+  -> target_customer_name: "David K"
+  -> estimate_description: is kapsaminin TAMAMI, metinde gectigi sekliyle
+     (maddeler/olculer/yapilacak isler UYDURULMADAN, oldugu gibi aktarilir;
+     madde isaretli bir liste varsa her maddeyi ayri bir satirda "- " ile
+     basla)
+  -> estimate_amount: metinde acikca bir tutar varsa SAYI olarak (orn.
+     "$2,950" -> 2950.00), yoksa null
+
+- "send_estimate": Hazirlanmis bir teklifi musteriye e-posta ile gonderme
+  komutu (teklifin kendisini degil, sadece GONDERME islemini tetikler).
+  Ornek: "David K'ye teklifi gonder", "Teklifi musteriye ilet",
+  "Son teklifi David K'ye mailat"
+  -> target_customer_name: "David K"
+
 Bu komutlarin HEPSINDE "target_customer_name" alani, komutun HANGI
 MUSTERININ/ISININ uzerinde oldugunu belirtir (musteri adi veya varsa is
 basligi olabilir). Emin degilsen metinde gecen ismi aynen yaz, tahmin
@@ -102,7 +139,7 @@ Metni oku ve SADECE gecerli JSON olarak don — baska hicbir metin, aciklama
 veya markdown isareti ekleme:
 
 {
-  "intent": "new_capture" | "assign_employee" | "unassign_employee" | "add_expense" | "add_checklist_item" | "set_start_date" | "change_job_status",
+  "intent": "new_capture" | "assign_employee" | "unassign_employee" | "add_expense" | "add_checklist_item" | "set_start_date" | "change_job_status" | "update_estimate" | "send_estimate",
 
   "customer_name": "musterinin adi, bulunamazsa null (sadece new_capture icin)",
   "phone": "telefon numarasi (sadece rakamlar/+ isareti), bulunamazsa null",
@@ -132,7 +169,9 @@ veya markdown isareti ekleme:
   "start_date": "TUR 2 icin (set_start_date): YYYY-MM-DD formatinda tarih, yoksa null",
   "start_time": "TUR 2 icin (set_start_date): HH:MM formatinda saat (sadece is saatli/randevu tarzinda ise), yoksa null",
   "duration_hours": "TUR 2 icin (set_start_date): isin kac saat surecegi, SAYI olarak (orn. 2 veya 1.5), belirtilmemisse null",
-  "new_status": "TUR 2 icin (change_job_status): pending_schedule|scheduled|in_progress|completed|cancelled, yoksa null"
+  "new_status": "TUR 2 icin (change_job_status): pending_schedule|scheduled|in_progress|completed|cancelled, yoksa null",
+  "estimate_description": "TUR 2 icin (update_estimate): yeni is kapsami aciklamasinin TAMAMI, yoksa null",
+  "estimate_amount": "TUR 2 icin (update_estimate): SAYI olarak yeni tutar, belirtilmemisse null"
 }
 
 Kurallar:
@@ -176,7 +215,8 @@ PROMPT;
      *   estimates: array<array{title: string, description: ?string, amount: ?float}>,
      *   target_customer_name: ?string, employee_name: ?string,
      *   expense_category: ?string, expense_description: ?string, expense_amount: ?float,
-     *   checklist_description: ?string, start_date: ?string, new_status: ?string
+     *   checklist_description: ?string, start_date: ?string, new_status: ?string,
+     *   estimate_description: ?string, estimate_amount: ?float
      * }
      */
     public static function parse(string $rawText, array $config): array
@@ -205,6 +245,7 @@ PROMPT;
         $validIntents = [
             'new_capture', 'assign_employee', 'unassign_employee', 'add_expense',
             'add_checklist_item', 'set_start_date', 'change_job_status',
+            'update_estimate', 'send_estimate',
         ];
         $intent = $parsed['intent'] ?? 'new_capture';
         $parsed['intent'] = in_array($intent, $validIntents, true) ? $intent : 'new_capture';
@@ -221,6 +262,8 @@ PROMPT;
         $parsed['duration_hours'] = self::normalizeAmount($parsed['duration_hours'] ?? null);
         $validStatuses = ['pending_schedule', 'scheduled', 'in_progress', 'completed', 'cancelled'];
         $parsed['new_status'] = in_array($parsed['new_status'] ?? null, $validStatuses, true) ? $parsed['new_status'] : null;
+        $parsed['estimate_description'] = $parsed['estimate_description'] ?? null;
+        $parsed['estimate_amount'] = self::normalizeAmount($parsed['estimate_amount'] ?? null);
 
         // new_capture fields (Tur 1) — always normalized so views/controller
         // never have to null-check every key, even for command-mode intents.

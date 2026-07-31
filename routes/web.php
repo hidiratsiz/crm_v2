@@ -40,6 +40,7 @@ $router->post('/estimates/update', [EstimateController::class, 'update'], [AuthM
 $router->post('/estimates/status', [EstimateController::class, 'updateStatus'], [AuthMiddleware::class]);
 $router->post('/estimates/delete', [EstimateController::class, 'delete'], [AuthMiddleware::class]);
 $router->post('/estimates/convert-to-job', [EstimateController::class, 'convertToJob'], [AuthMiddleware::class]);
+$router->post('/estimates/send-to-customer', [EstimateController::class, 'sendToCustomer'], [AuthMiddleware::class]);
 
 // Jobs / Isler (calisan atama, gider, kontrol listesi, durum/tarih)
 $router->get('/jobs', [JobController::class, 'index'], [AuthMiddleware::class]);

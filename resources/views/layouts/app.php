@@ -9,8 +9,14 @@
     <link href="<?= Url::to('/assets/css/app.css') ?>" rel="stylesheet">
 </head>
 <body>
+<div class="mobile-topbar">
+    <button id="sidebar-toggle" class="btn btn-outline-light btn-sm" type="button" aria-label="Menuyu ac/kapat" aria-controls="sidebar" aria-expanded="false">&#9776;</button>
+    <span class="fw-bold">JobPro</span>
+    <span style="width: 2.5rem;"></span>
+</div>
+<div class="sidebar-backdrop" id="sidebar-backdrop"></div>
 <div class="d-flex" id="app-wrapper">
-    <nav class="bg-dark text-white p-3" style="width: 240px; min-height: 100vh;">
+    <nav class="bg-dark text-white p-3 sidebar" id="sidebar" style="width: 240px; min-height: 100vh;">
         <h4 class="mb-4">JobPro</h4>
         <ul class="nav nav-pills flex-column gap-1">
             <li class="nav-item"><a class="nav-link text-white" href="<?= Url::to('/dashboard') ?>">Dashboard</a></li>

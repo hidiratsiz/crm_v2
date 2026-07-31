@@ -15,6 +15,7 @@ use App\Models\Job;
 use App\Models\Project;
 use App\Models\User;
 use App\Services\AiIntakeParser;
+use App\Services\EstimateMailer;
 use App\Services\JobNotifier;
 use Throwable;
 
@@ -185,6 +186,15 @@ class QuickCaptureController extends Controller
             return;
         }
 
+        // Estimate-level commands resolve via Project/Estimate, never via
+        // Job — at the "teklifi duzenle" / "teklifi gonder" stage a Job may
+        // not exist yet (that only appears once an estimate is accepted and
+        // converted), so they need a separate resolution path.
+        if (in_array($parsed['intent'], ['update_estimate', 'send_estimate'], true)) {
+            $this->handleEstimateCommand($customerName, $parsed);
+            return;
+        }
+
         $matches = Job::findByCustomerNameLike($customerName);
         if (empty($matches)) {
             // Give a precise reason: does the customer even exist, or do
@@ -237,6 +247,92 @@ class QuickCaptureController extends Controller
                 $this->handleChangeStatus($job, $parsed);
                 break;
         }
+    }
+
+    /**
+     * Resolves "David K teklifini duzenle" / "David K'ye teklifi gonder" to
+     * the customer's most recent project, then dispatches to the right
+     * estimate-level action. A separate resolution path from handleCommand's
+     * Job-based one, since neither of these commands requires a Job to
+     * already exist.
+     */
+    private function handleEstimateCommand(string $customerName, array $parsed): void
+    {
+        $customerMatches = Customer::findByNameLike($customerName);
+        if (empty($customerMatches)) {
+            $this->renderCommandResult(false, "\"{$customerName}\" adinda bir musteri bulunamadi.");
+            return;
+        }
+        if (count($customerMatches) > 1) {
+            $names = array_column($customerMatches, 'name');
+            $this->renderCommandResult(false, "\"{$customerName}\" adiyla birden fazla musteri eslesti (" . implode(', ', $names) . "). Lutfen daha spesifik bir isim girin.");
+            return;
+        }
+
+        $customer = Customer::find((int) $customerMatches[0]['id']);
+        $project = $customer ? Project::mostRecentForCustomer((int) $customer['id']) : null;
+        if (!$project) {
+            $this->renderCommandResult(false, "{$customerMatches[0]['name']} musteri olarak bulundu, ama henuz bir proje/teklifi yok.");
+            return;
+        }
+
+        if ($parsed['intent'] === 'update_estimate') {
+            $this->handleUpdateEstimate($project, $parsed);
+            return;
+        }
+
+        if ($parsed['intent'] === 'send_estimate') {
+            $this->handleSendEstimate($project);
+            return;
+        }
+    }
+
+    private function handleUpdateEstimate(array $project, array $parsed): void
+    {
+        $estimate = Estimate::mostRecentDraftForProject((int) $project['id']);
+        if (!$estimate) {
+            $this->renderCommandResult(
+                false,
+                "\"{$project['name']}\" projesinde guncellenecek bir TASLAK teklif bulunamadi (belki zaten gonderilmis/kabul edilmis) — teklif sayfasindan elle duzenleyebilirsiniz.",
+                null,
+                $project
+            );
+            return;
+        }
+
+        $description = trim((string) ($parsed['estimate_description'] ?? ''));
+        $amount = $parsed['estimate_amount'] ?? null;
+
+        if ($description === '' && $amount === null) {
+            $this->renderCommandResult(false, 'Guncellenecek is kapsami veya tutar metinden anlasilamadi.', null, $project);
+            return;
+        }
+
+        Estimate::update((int) $estimate['id'], [
+            'title' => $estimate['title'],
+            'description' => $description !== '' ? $description : $estimate['description'],
+            'amount' => $amount ?? $estimate['amount'],
+            'service_module_id' => $estimate['service_module_id'],
+        ]);
+
+        $message = "\"{$estimate['title']}\" teklifi guncellendi.";
+        if ($amount !== null) {
+            $message .= ' Tutar: $' . number_format($amount, 2) . '.';
+        }
+
+        $this->renderCommandResult(true, $message, null, $project);
+    }
+
+    private function handleSendEstimate(array $project): void
+    {
+        $estimate = Estimate::mostRecentForProject((int) $project['id']);
+        if (!$estimate) {
+            $this->renderCommandResult(false, "\"{$project['name']}\" projesinde gonderilecek bir teklif bulunamadi.", null, $project);
+            return;
+        }
+
+        $result = EstimateMailer::sendToCustomer((int) $estimate['id']);
+        $this->renderCommandResult($result['success'], $result['message'], null, $project);
     }
 
     private function handleAssignEmployee(array $job, array $parsed): void
@@ -369,12 +465,13 @@ class QuickCaptureController extends Controller
         $this->renderCommandResult(true, "{$job['customer_name']} isinin durumu \"{$labels[$status]}\" olarak guncellendi.", $job);
     }
 
-    private function renderCommandResult(bool $success, string $message, ?array $job = null): void
+    private function renderCommandResult(bool $success, string $message, ?array $job = null, ?array $project = null): void
     {
         echo View::renderWithLayout('quick-capture/command-result', [
             'success' => $success,
             'message' => $message,
             'job' => $job,
+            'project' => $project,
         ]);
     }
 

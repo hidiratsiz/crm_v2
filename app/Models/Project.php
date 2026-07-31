@@ -44,6 +44,24 @@ class Project
     }
 
     /**
+     * The customer's single most recent (non-deleted) project — used by
+     * Quick Capture's estimate-level voice commands ("David K teklifini
+     * duzenle", "David K'ye teklifi gonder") to figure out WHICH project's
+     * estimate is meant, since those commands only give a customer name.
+     */
+    public static function mostRecentForCustomer(int $customerId): ?array
+    {
+        $db = Database::connection();
+        $stmt = $db->prepare(
+            'SELECT * FROM projects WHERE customer_id = :cid AND deleted_at IS NULL
+             ORDER BY created_at DESC LIMIT 1'
+        );
+        $stmt->execute(['cid' => $customerId]);
+        $row = $stmt->fetch();
+        return $row ?: null;
+    }
+
+    /**
      * All projects with their customer's name attached, newest first —
      * used by the global "Projeler" list page and the dashboard's
      * "recent activity" widget.
