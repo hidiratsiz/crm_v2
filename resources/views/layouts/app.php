@@ -1,4 +1,13 @@
 <?php use App\Core\Auth; use App\Core\Url; ?>
+<?php
+// Aktif sekmeyi vurgulamak icin (hem alt kisayol cubugunda hem de istenirse
+// baska yerlerde kullanilabilir) — sorgu parametrelerini atip yolu karsilastirir.
+$currentPath = strtok($_SERVER['REQUEST_URI'] ?? '', '?');
+$isActivePath = static function (string $path) use ($currentPath): bool {
+    $target = Url::to($path);
+    return $currentPath === $target || str_starts_with((string) $currentPath, $target . '/');
+};
+?>
 <!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -6,6 +15,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>JobPro</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link href="<?= Url::asset('/assets/css/app.css') ?>" rel="stylesheet">
 </head>
 <body>
@@ -49,6 +59,29 @@
         <?= $content ?? '' ?>
     </main>
 </div>
+
+<!-- Mobil Alt Kisayol Cubugu -->
+<nav class="mobile-bottom-nav">
+    <?php if (Auth::can('customers.view')): ?>
+        <a href="<?= Url::to('/finance') ?>" class="mobile-bottom-nav-item <?= $isActivePath('/finance') ? 'active' : '' ?>">
+            <i class="bi bi-cash-stack"></i>
+            <span>Finans</span>
+        </a>
+    <?php endif; ?>
+    <a href="<?= Url::to('/customers') ?>" class="mobile-bottom-nav-item <?= $isActivePath('/customers') ? 'active' : '' ?>">
+        <i class="bi bi-people"></i>
+        <span>Musteriler</span>
+    </a>
+    <a href="<?= Url::to('/jobs') ?>" class="mobile-bottom-nav-item <?= $isActivePath('/jobs') ? 'active' : '' ?>">
+        <i class="bi bi-briefcase"></i>
+        <span>Isler</span>
+    </a>
+    <a href="<?= Url::to('/calendar') ?>" class="mobile-bottom-nav-item <?= $isActivePath('/calendar') ? 'active' : '' ?>">
+        <i class="bi bi-calendar3"></i>
+        <span>Takvim</span>
+    </a>
+</nav>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="<?= Url::asset('/assets/js/app.js') ?>"></script>
 </body>
