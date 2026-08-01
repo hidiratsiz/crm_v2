@@ -16,8 +16,8 @@ class LaborCost
     {
         $db = Database::connection();
         $stmt = $db->prepare(
-            'INSERT INTO labor_costs (job_id, user_id, amount, work_date, note, created_by)
-             VALUES (:job_id, :user_id, :amount, :work_date, :note, :created_by)'
+            'INSERT INTO labor_costs (job_id, user_id, amount, work_date, note, paid_by, created_by)
+             VALUES (:job_id, :user_id, :amount, :work_date, :note, :paid_by, :created_by)'
         );
         $stmt->execute([
             'job_id' => $data['job_id'],
@@ -25,6 +25,7 @@ class LaborCost
             'amount' => $data['amount'],
             'work_date' => $data['work_date'] ?? date('Y-m-d'),
             'note' => $data['note'] ?? null,
+            'paid_by' => $data['paid_by'] ?? null,
             'created_by' => $data['created_by'] ?? null,
         ]);
         return (int) $db->lastInsertId();
@@ -47,9 +48,10 @@ class LaborCost
     {
         $db = Database::connection();
         $stmt = $db->prepare(
-            'SELECT lc.*, u.name AS employee_name
+            'SELECT lc.*, u.name AS employee_name, payer.name AS paid_by_name
              FROM labor_costs lc
              LEFT JOIN users u ON u.id = lc.user_id
+             LEFT JOIN users payer ON payer.id = lc.paid_by
              WHERE lc.job_id = :job_id AND lc.deleted_at IS NULL
              ORDER BY lc.work_date DESC, lc.created_at DESC'
         );
@@ -82,13 +84,14 @@ class LaborCost
     public static function allWithDetails(?string $from = null, ?string $to = null): array
     {
         $db = Database::connection();
-        $sql = 'SELECT lc.*, u.name AS employee_name,
+        $sql = 'SELECT lc.*, u.name AS employee_name, payer.name AS paid_by_name,
                        j.id AS job_id, c.name AS customer_name, pr.name AS project_name
                 FROM labor_costs lc
                 JOIN jobs j ON j.id = lc.job_id
                 JOIN projects pr ON pr.id = j.project_id
                 JOIN customers c ON c.id = pr.customer_id
                 LEFT JOIN users u ON u.id = lc.user_id
+                LEFT JOIN users payer ON payer.id = lc.paid_by
                 WHERE lc.deleted_at IS NULL';
         $params = [];
         if ($from !== null && $from !== '') {

@@ -186,8 +186,8 @@ class FinanceController extends Controller
                 'job_id' => $laborCost['job_id'],
                 'customer_name' => $laborCost['customer_name'],
                 'project_name' => $laborCost['project_name'],
-                'who' => $laborCost['employee_name'],
-                'label' => 'Personel Gideri',
+                'who' => $laborCost['paid_by_name'],
+                'label' => 'Personel: ' . ($laborCost['employee_name'] ?? '-'),
                 'note' => $laborCost['note'],
             ];
         }

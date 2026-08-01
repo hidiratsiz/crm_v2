@@ -374,7 +374,7 @@ $statusBadgeClass = [
         <p class="text-muted">Henuz bir personel gideri eklenmedi.</p>
     <?php else: ?>
         <table class="table table-sm mb-3">
-            <thead><tr><th>Tarih</th><th>Calisan</th><th>Not</th><th>Tutar</th><th></th></tr></thead>
+            <thead><tr><th>Tarih</th><th>Calisan</th><th>Not</th><th>Tutar</th><th>Kim Odedi</th><th></th></tr></thead>
             <tbody>
             <?php foreach ($laborCosts as $laborCost): ?>
                 <tr>
@@ -382,6 +382,7 @@ $statusBadgeClass = [
                     <td><?= htmlspecialchars($laborCost['employee_name'] ?? '-') ?></td>
                     <td><?= htmlspecialchars($laborCost['note'] ?? '-') ?></td>
                     <td>$<?= number_format((float) $laborCost['amount'], 2) ?></td>
+                    <td><?= htmlspecialchars($laborCost['paid_by_name'] ?? '-') ?></td>
                     <td>
                         <?php if (Auth::can('customers.delete')): ?>
                             <form action="<?= Url::to('/jobs/labor-costs/delete') ?>" method="post">
@@ -402,7 +403,7 @@ $statusBadgeClass = [
             <?= Csrf::field() ?>
             <input type="hidden" name="id" value="<?= $job['id'] ?>">
             <div class="col-md-2"><input type="date" name="work_date" class="form-control" value="<?= date('Y-m-d') ?>"></div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <select name="user_id" class="form-select">
                     <option value="">Calisan secin...</option>
                     <?php foreach ($availableEmployees as $emp): ?>
@@ -412,7 +413,15 @@ $statusBadgeClass = [
             </div>
             <div class="col-md-3"><input type="text" name="note" class="form-control" placeholder="Not (orn. 2 gunluk yevmiye)"></div>
             <div class="col-md-2"><input type="text" name="amount" class="form-control" placeholder="Tutar $" required></div>
-            <div class="col-md-2"><button type="submit" class="btn btn-outline-primary w-100">Ekle</button></div>
+            <div class="col-md-2">
+                <select name="paid_by" class="form-select">
+                    <option value="">Kim odedi? (Ben)</option>
+                    <?php foreach ($availableEmployees as $emp): ?>
+                        <option value="<?= $emp['id'] ?>"><?= htmlspecialchars($emp['name']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="col-md-1"><button type="submit" class="btn btn-outline-primary w-100">Ekle</button></div>
         </form>
     <?php endif; ?>
 </div>

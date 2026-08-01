@@ -387,6 +387,11 @@ class JobController extends Controller
         $userId = (int) $this->input('user_id');
         $workDate = trim((string) $this->input('work_date'));
 
+        // "Odemeyi kim yapti": defaults to whoever is submitting the form,
+        // but can be pointed at another user (e.g. field lead paid the crew
+        // in cash and office staff logs it later).
+        $paidBy = (int) $this->input('paid_by');
+
         if ($amount > 0) {
             LaborCost::create([
                 'job_id' => $job['id'],
@@ -394,6 +399,7 @@ class JobController extends Controller
                 'amount' => $amount,
                 'work_date' => $workDate !== '' ? $workDate : date('Y-m-d'),
                 'note' => $this->input('note'),
+                'paid_by' => $paidBy > 0 ? $paidBy : Auth::id(),
                 'created_by' => Auth::id(),
             ]);
         }
