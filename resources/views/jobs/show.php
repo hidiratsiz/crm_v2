@@ -72,13 +72,14 @@ $statusBadgeClass = [
     <?php if (!empty($employeeFinance)): ?>
         <h6 class="mb-2 mt-3">Kimde Ne Kadar Var</h6>
         <table class="table table-sm mb-0">
-            <thead><tr><th>Calisan</th><th class="text-end">Aldigi Odeme</th><th class="text-end">Yaptigi Gider</th><th class="text-end">Elinde Kalan</th></tr></thead>
+            <thead><tr><th>Calisan</th><th class="text-end">Aldigi Odeme</th><th class="text-end">Yaptigi Gider</th><th class="text-end">Odedigi Iscilik</th><th class="text-end">Elinde Kalan</th></tr></thead>
             <tbody>
             <?php foreach ($employeeFinance as $row): ?>
                 <tr>
                     <td><?= htmlspecialchars($row['name']) ?></td>
                     <td class="text-end">$<?= number_format($row['received'], 2) ?></td>
                     <td class="text-end">$<?= number_format($row['spent'], 2) ?></td>
+                    <td class="text-end">$<?= number_format($row['labor_paid'] ?? 0, 2) ?></td>
                     <td class="text-end fw-bold <?= $row['net'] > 0 ? 'text-warning' : ($row['net'] < 0 ? 'text-danger' : '') ?>">
                         $<?= number_format($row['net'], 2) ?>
                     </td>
@@ -87,7 +88,7 @@ $statusBadgeClass = [
             </tbody>
         </table>
         <small class="text-muted d-block mt-2">
-            "Elinde kalan" pozitifse o calisan musteriden aldigi paranin bir kismini henuz sirkete/kasaya teslim etmemis demektir.
+            "Elinde kalan" = aldigi odeme - yaptigi gider - odedigi iscilik. Pozitifse o calisan musteriden aldigi paranin bir kismini henuz sirkete/kasaya teslim etmemis demektir.
         </small>
     <?php endif; ?>
 </div>

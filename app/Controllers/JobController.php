@@ -79,43 +79,48 @@ class JobController extends Controller
             'contractAmount' => $contractAmount,
             'balanceDue' => $contractAmount !== null ? ((float) $contractAmount - $paymentTotal) : null,
             'netProfit' => $paymentTotal - $expenseTotal - $laborTotal,
-            'employeeFinance' => $this->buildEmployeeFinance($payments, $expenses),
+            'employeeFinance' => $this->buildEmployeeFinance($payments, $expenses, $laborCosts),
             'checklist' => ChecklistItem::allForJob($job['id']),
         ]);
     }
 
     /**
-     * "Kimde ne kadar kaldi": for each employee who received a payment
-     * and/or logged an expense on this job, nets what they've collected
-     * against what they've spent — the cash they're currently holding (or
-     * owe back) for this specific job.
+     * "Kimde ne kadar kaldi": for each employee who received a payment,
+     * logged an expense, or paid out labor on this job, nets what they've
+     * collected against what they've spent (including wages they handed
+     * out) — the cash they're currently holding (or owe back) for this
+     * specific job.
      */
-    private function buildEmployeeFinance(array $payments, array $expenses): array
+    private function buildEmployeeFinance(array $payments, array $expenses, array $laborCosts = []): array
     {
         $byEmployee = [];
 
-        foreach ($payments as $payment) {
-            $id = $payment['received_by'] ?? null;
-            $name = $payment['received_by_name'] ?? 'Bilinmiyor';
-            $key = $id ?? 'unknown';
+        $ensureRow = static function (array &$byEmployee, $id, string $name): string {
+            $key = (string) ($id ?? 'unknown');
             if (!isset($byEmployee[$key])) {
-                $byEmployee[$key] = ['name' => $name, 'received' => 0.0, 'spent' => 0.0];
+                $byEmployee[$key] = ['name' => $name, 'received' => 0.0, 'spent' => 0.0, 'labor_paid' => 0.0];
             }
+            return $key;
+        };
+
+        foreach ($payments as $payment) {
+            $key = $ensureRow($byEmployee, $payment['received_by'] ?? null, $payment['received_by_name'] ?? 'Bilinmiyor');
             $byEmployee[$key]['received'] += (float) $payment['amount'];
         }
 
         foreach ($expenses as $expense) {
-            $id = $expense['created_by'] ?? null;
-            $name = $expense['created_by_name'] ?? 'Bilinmiyor';
-            $key = $id ?? 'unknown';
-            if (!isset($byEmployee[$key])) {
-                $byEmployee[$key] = ['name' => $name, 'received' => 0.0, 'spent' => 0.0];
-            }
+            $key = $ensureRow($byEmployee, $expense['created_by'] ?? null, $expense['created_by_name'] ?? 'Bilinmiyor');
             $byEmployee[$key]['spent'] += (float) $expense['amount'];
         }
 
+        // Labor payments count against the PAYER's held cash.
+        foreach ($laborCosts as $laborCost) {
+            $key = $ensureRow($byEmployee, $laborCost['paid_by'] ?? null, $laborCost['paid_by_name'] ?? 'Bilinmiyor');
+            $byEmployee[$key]['labor_paid'] += (float) $laborCost['amount'];
+        }
+
         foreach ($byEmployee as &$row) {
-            $row['net'] = $row['received'] - $row['spent'];
+            $row['net'] = $row['received'] - $row['spent'] - $row['labor_paid'];
         }
         unset($row);
 
