@@ -6,7 +6,7 @@
         <div class="alert alert-danger">Teklif gonderilemedi — musterinin e-postasi kayitli mi kontrol edin.</div>
     <?php endif; ?>
 <?php endif; ?>
-<div class="d-flex justify-content-between align-items-start mb-4">
+<div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2">
     <div>
         <h2 class="mb-1"><?= htmlspecialchars($project['name']) ?></h2>
         <?php if ($customer): ?>
@@ -115,15 +115,17 @@
             <p class="text-muted mb-3"><?= nl2br(htmlspecialchars($estimate['description'] ?? '-')) ?></p>
 
             <?php if (!empty($fieldValuesByEstimate[$estimate['id']])): ?>
-                <table class="table table-sm mb-3">
-                    <?php foreach ($fieldValuesByEstimate[$estimate['id']] as $fv): ?>
-                        <tr>
-                            <td class="text-muted"><?= htmlspecialchars($fv['label']) ?></td>
-                            <td><?= htmlspecialchars($fv['value'] ?? '-') ?></td>
-                            <td class="text-end">$<?= number_format((float) $fv['computed_price'], 2) ?></td>
-                        </tr>
-                    <?php endforeach; ?>
-                </table>
+                <div class="table-responsive">
+                    <table class="table table-sm mb-3">
+                        <?php foreach ($fieldValuesByEstimate[$estimate['id']] as $fv): ?>
+                            <tr>
+                                <td class="text-muted"><?= htmlspecialchars($fv['label']) ?></td>
+                                <td><?= htmlspecialchars($fv['value'] ?? '-') ?></td>
+                                <td class="text-end">$<?= number_format((float) $fv['computed_price'], 2) ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </table>
+                </div>
             <?php endif; ?>
 
             <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">

@@ -16,7 +16,7 @@ $statusBadgeClass = [
 ];
 ?>
 
-<div class="d-flex justify-content-between align-items-start mb-4">
+<div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2">
     <div>
         <h2 class="mb-1">
             <?= htmlspecialchars($project['name'] ?? 'Is') ?>
@@ -71,22 +71,24 @@ $statusBadgeClass = [
 
     <?php if (!empty($employeeFinance)): ?>
         <h6 class="mb-2 mt-3">Kimde Ne Kadar Var</h6>
-        <table class="table table-sm mb-0">
-            <thead><tr><th>Calisan</th><th class="text-end">Aldigi Odeme</th><th class="text-end">Yaptigi Gider</th><th class="text-end">Odedigi Iscilik</th><th class="text-end">Elinde Kalan</th></tr></thead>
-            <tbody>
-            <?php foreach ($employeeFinance as $row): ?>
-                <tr>
-                    <td><?= htmlspecialchars($row['name']) ?></td>
-                    <td class="text-end">$<?= number_format($row['received'], 2) ?></td>
-                    <td class="text-end">$<?= number_format($row['spent'], 2) ?></td>
-                    <td class="text-end">$<?= number_format($row['labor_paid'] ?? 0, 2) ?></td>
-                    <td class="text-end fw-bold <?= $row['net'] > 0 ? 'text-warning' : ($row['net'] < 0 ? 'text-danger' : '') ?>">
-                        $<?= number_format($row['net'], 2) ?>
-                    </td>
-                </tr>
-            <?php endforeach; ?>
-            </tbody>
-        </table>
+        <div class="table-responsive">
+            <table class="table table-sm mb-0">
+                <thead><tr><th>Calisan</th><th class="text-end">Aldigi Odeme</th><th class="text-end">Yaptigi Gider</th><th class="text-end">Odedigi Iscilik</th><th class="text-end">Elinde Kalan</th></tr></thead>
+                <tbody>
+                <?php foreach ($employeeFinance as $row): ?>
+                    <tr>
+                        <td><?= htmlspecialchars($row['name']) ?></td>
+                        <td class="text-end">$<?= number_format($row['received'], 2) ?></td>
+                        <td class="text-end">$<?= number_format($row['spent'], 2) ?></td>
+                        <td class="text-end">$<?= number_format($row['labor_paid'] ?? 0, 2) ?></td>
+                        <td class="text-end fw-bold <?= $row['net'] > 0 ? 'text-warning' : ($row['net'] < 0 ? 'text-danger' : '') ?>">
+                            $<?= number_format($row['net'], 2) ?>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
         <small class="text-muted d-block mt-2">
             "Elinde kalan" = aldigi odeme - yaptigi gider - odedigi iscilik. Pozitifse o calisan musteriden aldigi paranin bir kismini henuz sirkete/kasaya teslim etmemis demektir.
         </small>
@@ -252,29 +254,31 @@ $statusBadgeClass = [
     <?php if (empty($expenses)): ?>
         <p class="text-muted">Henuz bir gider eklenmedi.</p>
     <?php else: ?>
-        <table class="table table-sm mb-3">
-            <thead><tr><th>Tarih</th><th>Kategori</th><th>Aciklama</th><th>Tutar</th><th>Kim</th><th></th></tr></thead>
-            <tbody>
-            <?php foreach ($expenses as $expense): ?>
-                <tr>
-                    <td><?= !empty($expense['expense_date']) ? htmlspecialchars(date('d.m.Y', strtotime($expense['expense_date']))) : '-' ?></td>
-                    <td><?= htmlspecialchars($expense['category'] ?? '-') ?></td>
-                    <td><?= htmlspecialchars($expense['description'] ?? '-') ?></td>
-                    <td>$<?= number_format((float) $expense['amount'], 2) ?></td>
-                    <td><?= htmlspecialchars($expense['created_by_name'] ?? '-') ?></td>
-                    <td>
-                        <?php if (Auth::can('customers.delete')): ?>
-                            <form action="<?= Url::to('/jobs/expenses/delete') ?>" method="post">
-                                <?= Csrf::field() ?>
-                                <input type="hidden" name="id" value="<?= $expense['id'] ?>">
-                                <button type="submit" class="btn btn-sm btn-outline-danger">Sil</button>
-                            </form>
-                        <?php endif; ?>
-                    </td>
-                </tr>
-            <?php endforeach; ?>
-            </tbody>
-        </table>
+        <div class="table-responsive">
+            <table class="table table-sm mb-3">
+                <thead><tr><th>Tarih</th><th>Kategori</th><th>Aciklama</th><th>Tutar</th><th>Kim</th><th></th></tr></thead>
+                <tbody>
+                <?php foreach ($expenses as $expense): ?>
+                    <tr>
+                        <td><?= !empty($expense['expense_date']) ? htmlspecialchars(date('d.m.Y', strtotime($expense['expense_date']))) : '-' ?></td>
+                        <td><?= htmlspecialchars($expense['category'] ?? '-') ?></td>
+                        <td><?= htmlspecialchars($expense['description'] ?? '-') ?></td>
+                        <td>$<?= number_format((float) $expense['amount'], 2) ?></td>
+                        <td><?= htmlspecialchars($expense['created_by_name'] ?? '-') ?></td>
+                        <td>
+                            <?php if (Auth::can('customers.delete')): ?>
+                                <form action="<?= Url::to('/jobs/expenses/delete') ?>" method="post">
+                                    <?= Csrf::field() ?>
+                                    <input type="hidden" name="id" value="<?= $expense['id'] ?>">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Sil</button>
+                                </form>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
     <?php endif; ?>
 
     <?php if (Auth::can('customers.edit')): ?>
@@ -312,29 +316,31 @@ $statusBadgeClass = [
     <?php if (empty($payments)): ?>
         <p class="text-muted">Henuz bir odeme kaydedilmedi.</p>
     <?php else: ?>
-        <table class="table table-sm mb-3">
-            <thead><tr><th>Tarih</th><th>Tutar</th><th>Yontem</th><th>Not</th><th>Kim Aldi</th><th></th></tr></thead>
-            <tbody>
-            <?php foreach ($payments as $payment): ?>
-                <tr>
-                    <td><?= !empty($payment['paid_at']) ? htmlspecialchars(date('d.m.Y', strtotime($payment['paid_at']))) : '-' ?></td>
-                    <td>$<?= number_format((float) $payment['amount'], 2) ?></td>
-                    <td><?= htmlspecialchars($paymentMethodLabels[$payment['method']] ?? $payment['method']) ?></td>
-                    <td><?= htmlspecialchars($payment['note'] ?? '-') ?></td>
-                    <td><?= htmlspecialchars($payment['received_by_name'] ?? '-') ?></td>
-                    <td>
-                        <?php if (Auth::can('customers.delete')): ?>
-                            <form action="<?= Url::to('/jobs/payments/delete') ?>" method="post">
-                                <?= Csrf::field() ?>
-                                <input type="hidden" name="id" value="<?= $payment['id'] ?>">
-                                <button type="submit" class="btn btn-sm btn-outline-danger">Sil</button>
-                            </form>
-                        <?php endif; ?>
-                    </td>
-                </tr>
-            <?php endforeach; ?>
-            </tbody>
-        </table>
+        <div class="table-responsive">
+            <table class="table table-sm mb-3">
+                <thead><tr><th>Tarih</th><th>Tutar</th><th>Yontem</th><th>Not</th><th>Kim Aldi</th><th></th></tr></thead>
+                <tbody>
+                <?php foreach ($payments as $payment): ?>
+                    <tr>
+                        <td><?= !empty($payment['paid_at']) ? htmlspecialchars(date('d.m.Y', strtotime($payment['paid_at']))) : '-' ?></td>
+                        <td>$<?= number_format((float) $payment['amount'], 2) ?></td>
+                        <td><?= htmlspecialchars($paymentMethodLabels[$payment['method']] ?? $payment['method']) ?></td>
+                        <td><?= htmlspecialchars($payment['note'] ?? '-') ?></td>
+                        <td><?= htmlspecialchars($payment['received_by_name'] ?? '-') ?></td>
+                        <td>
+                            <?php if (Auth::can('customers.delete')): ?>
+                                <form action="<?= Url::to('/jobs/payments/delete') ?>" method="post">
+                                    <?= Csrf::field() ?>
+                                    <input type="hidden" name="id" value="<?= $payment['id'] ?>">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Sil</button>
+                                </form>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
     <?php endif; ?>
 
     <?php if (Auth::can('customers.edit')): ?>
@@ -374,29 +380,31 @@ $statusBadgeClass = [
     <?php if (empty($laborCosts)): ?>
         <p class="text-muted">Henuz bir personel gideri eklenmedi.</p>
     <?php else: ?>
-        <table class="table table-sm mb-3">
-            <thead><tr><th>Tarih</th><th>Calisan</th><th>Not</th><th>Tutar</th><th>Kim Odedi</th><th></th></tr></thead>
-            <tbody>
-            <?php foreach ($laborCosts as $laborCost): ?>
-                <tr>
-                    <td><?= !empty($laborCost['work_date']) ? htmlspecialchars(date('d.m.Y', strtotime($laborCost['work_date']))) : '-' ?></td>
-                    <td><?= htmlspecialchars($laborCost['employee_name'] ?? '-') ?></td>
-                    <td><?= htmlspecialchars($laborCost['note'] ?? '-') ?></td>
-                    <td>$<?= number_format((float) $laborCost['amount'], 2) ?></td>
-                    <td><?= htmlspecialchars($laborCost['paid_by_name'] ?? '-') ?></td>
-                    <td>
-                        <?php if (Auth::can('customers.delete')): ?>
-                            <form action="<?= Url::to('/jobs/labor-costs/delete') ?>" method="post">
-                                <?= Csrf::field() ?>
-                                <input type="hidden" name="id" value="<?= $laborCost['id'] ?>">
-                                <button type="submit" class="btn btn-sm btn-outline-danger">Sil</button>
-                            </form>
-                        <?php endif; ?>
-                    </td>
-                </tr>
-            <?php endforeach; ?>
-            </tbody>
-        </table>
+        <div class="table-responsive">
+            <table class="table table-sm mb-3">
+                <thead><tr><th>Tarih</th><th>Calisan</th><th>Not</th><th>Tutar</th><th>Kim Odedi</th><th></th></tr></thead>
+                <tbody>
+                <?php foreach ($laborCosts as $laborCost): ?>
+                    <tr>
+                        <td><?= !empty($laborCost['work_date']) ? htmlspecialchars(date('d.m.Y', strtotime($laborCost['work_date']))) : '-' ?></td>
+                        <td><?= htmlspecialchars($laborCost['employee_name'] ?? '-') ?></td>
+                        <td><?= htmlspecialchars($laborCost['note'] ?? '-') ?></td>
+                        <td>$<?= number_format((float) $laborCost['amount'], 2) ?></td>
+                        <td><?= htmlspecialchars($laborCost['paid_by_name'] ?? '-') ?></td>
+                        <td>
+                            <?php if (Auth::can('customers.delete')): ?>
+                                <form action="<?= Url::to('/jobs/labor-costs/delete') ?>" method="post">
+                                    <?= Csrf::field() ?>
+                                    <input type="hidden" name="id" value="<?= $laborCost['id'] ?>">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Sil</button>
+                                </form>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
     <?php endif; ?>
 
     <?php if (Auth::can('customers.edit')): ?>

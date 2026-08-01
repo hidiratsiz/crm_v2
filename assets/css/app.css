@@ -65,6 +65,17 @@ tr[data-href] {
         padding: 1rem !important;
         /* Sabit alt kisayol cubugunun icerigin uzerine binmemesi icin */
         padding-bottom: calc(4.5rem + env(safe-area-inset-bottom)) !important;
+        /* Tablolar .table-responsive ile kendi icinde kayar; sayfanin
+           tamaminin yatay kaymasini guvenlik onlemi olarak engelle */
+        overflow-x: hidden;
+    }
+
+    /* Kart basliklarindaki fs-5 tutarlar mobilde tasmasin diye biraz kucult */
+    .card .fs-4 {
+        font-size: 1.1rem !important;
+    }
+    .card .fs-5 {
+        font-size: 1rem !important;
     }
 
     .mobile-bottom-nav {
