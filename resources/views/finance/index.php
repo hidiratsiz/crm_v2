@@ -139,26 +139,42 @@
     <?php else: ?>
         <div class="table-responsive">
             <table class="table table-sm mb-0">
-                <thead><tr><th>Musteri / Is</th><th class="text-end">Sozlesme</th><th class="text-end">Gelir</th><th class="text-end">Gider</th><th class="text-end">Personel</th><th class="text-end">Bakiye</th><th class="text-end">Net</th><th></th></tr></thead>
+                <thead><tr><th>Musteri / Is</th><th class="text-end">Gelir</th><th class="text-end">Gider</th><th class="text-end">Bakiye</th><th class="text-end">Net</th></tr></thead>
                 <tbody>
-                <?php foreach ($jobSummary as $row): ?>
-                    <tr>
+                <?php foreach ($jobSummary as $j => $row): ?>
+                    <?php $totalCost = $row['expense'] + $row['labor']; ?>
+                    <tr onclick="if (!event.target.closest('a, button')) document.getElementById('job-detail-<?= $j ?>').classList.toggle('d-none');" style="cursor: pointer;">
                         <td>
-                            <?= htmlspecialchars($row['customer_name'] ?? '-') ?>
+                            <?= htmlspecialchars($row['customer_name'] ?? '-') ?> <span class="text-muted">&#9662;</span>
                             <br><small class="text-muted"><?= htmlspecialchars($row['project_name'] ?? '') ?></small>
                         </td>
-                        <td class="text-end"><?= $row['contract_amount'] !== null ? '$' . number_format($row['contract_amount'], 2) : '-' ?></td>
-                        <td class="text-end text-success">$<?= number_format($row['income'], 2) ?></td>
-                        <td class="text-end text-danger">$<?= number_format($row['expense'], 2) ?></td>
-                        <td class="text-end text-danger">$<?= number_format($row['labor'], 2) ?></td>
+                        <td class="text-end text-success">
+                            $<?= number_format($row['income'], 2) ?>
+                            <?php if ($row['contract_amount'] !== null): ?>
+                                <br><small class="text-muted">($<?= number_format($row['contract_amount'], 2) ?>)</small>
+                            <?php endif; ?>
+                        </td>
+                        <td class="text-end text-danger">$<?= number_format($totalCost, 2) ?></td>
                         <td class="text-end fw-bold"><?= $row['balance'] !== null ? '$' . number_format($row['balance'], 2) : '-' ?></td>
                         <td class="text-end fw-bold <?= $row['net'] >= 0 ? 'text-success' : 'text-danger' ?>">$<?= number_format($row['net'], 2) ?></td>
-                        <td><a href="<?= Url::to('/jobs/show') ?>?id=<?= $row['job_id'] ?>" class="btn btn-sm btn-outline-secondary">Ise Git</a></td>
+                    </tr>
+                    <tr id="job-detail-<?= $j ?>" class="d-none">
+                        <td colspan="5" class="bg-light">
+                            <div class="d-flex flex-wrap gap-3 align-items-center py-1">
+                                <span><span class="text-muted">Sozlesme:</span> <strong><?= $row['contract_amount'] !== null ? '$' . number_format($row['contract_amount'], 2) : '-' ?></strong></span>
+                                <span><span class="text-muted">Malzeme/Gider:</span> <strong class="text-danger">$<?= number_format($row['expense'], 2) ?></strong></span>
+                                <span><span class="text-muted">Personel:</span> <strong class="text-danger">$<?= number_format($row['labor'], 2) ?></strong></span>
+                                <a href="<?= Url::to('/jobs/show') ?>?id=<?= $row['job_id'] ?>" class="btn btn-sm btn-outline-secondary ms-auto">Ise Git</a>
+                            </div>
+                        </td>
                     </tr>
                 <?php endforeach; ?>
                 </tbody>
             </table>
         </div>
+        <small class="text-muted d-block mt-2">
+            Gelir altindaki parantez sozlesme tutaridir. Satira tiklayinca gider dokumu ve ise gitme baglantisi acilir.
+        </small>
     <?php endif; ?>
 </div>
 
