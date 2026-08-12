@@ -60,7 +60,7 @@
     <?php else: ?>
         <div class="table-responsive">
             <table class="table table-sm mb-0">
-                <thead><tr><th>Calisan</th><th class="text-end">Aldigi Odeme</th><th class="text-end">Yaptigi Gider</th><th class="text-end">Odedigi Iscilik</th><th class="text-end">Elinde Kalan</th></tr></thead>
+                <thead><tr><th>Calisan</th><th class="text-end">Aldigi Odeme</th><th class="text-end">Yaptigi Gider</th><th class="text-end">Elinde Kalan</th></tr></thead>
                 <tbody>
                 <?php foreach ($employeeFinance as $i => $row): ?>
                     <tr>
@@ -72,19 +72,18 @@
                         </td>
                         <td class="text-end">$<?= number_format($row['received'], 2) ?></td>
                         <td class="text-end">$<?= number_format($row['spent'], 2) ?></td>
-                        <td class="text-end">$<?= number_format($row['labor_paid'] ?? 0, 2) ?></td>
                         <td class="text-end fw-bold <?= $row['net'] > 0 ? 'text-warning' : ($row['net'] < 0 ? 'text-danger' : '') ?>">
                             $<?= number_format($row['net'], 2) ?>
                         </td>
                     </tr>
                     <tr id="emp-detail-<?= $i ?>" class="d-none">
-                        <td colspan="5" class="bg-light">
+                        <td colspan="4" class="bg-light">
                             <?php if (empty($row['jobs'])): ?>
                                 <span class="text-muted">Bu donemde ise bagli hareket yok.</span>
                             <?php else: ?>
                                 <div class="table-responsive">
                                     <table class="table table-sm mb-0">
-                                        <thead><tr><th>Musteri / Is</th><th class="text-end">Aldigi</th><th class="text-end">Harcadigi</th><th class="text-end">Odedigi Iscilik</th><th class="text-end">Net</th></tr></thead>
+                                        <thead><tr><th>Musteri / Is</th><th class="text-end">Aldigi</th><th class="text-end">Harcadigi</th><th class="text-end">Net</th></tr></thead>
                                         <tbody>
                                         <?php foreach ($row['jobs'] as $jobRow): ?>
                                             <tr>
@@ -94,7 +93,6 @@
                                                 </td>
                                                 <td class="text-end text-success">$<?= number_format($jobRow['received'], 2) ?></td>
                                                 <td class="text-end text-danger">$<?= number_format($jobRow['spent'], 2) ?></td>
-                                                <td class="text-end text-danger">$<?= number_format($jobRow['labor_paid'], 2) ?></td>
                                                 <td class="text-end fw-bold">$<?= number_format($jobRow['net'], 2) ?></td>
                                             </tr>
                                         <?php endforeach; ?>
@@ -109,7 +107,7 @@
             </table>
         </div>
         <small class="text-muted d-block mt-2">
-            "Elinde kalan" = aldigi odeme - yaptigi gider - odedigi iscilik. Pozitifse o calisan musterilerden aldigi paranin bir kismini henuz sirkete/kasaya teslim etmemis demektir. Isme tiklayinca is bazinda dokum acilir.
+            "Elinde kalan" = aldigi odeme - yaptigi gider (odedigi iscilikler de gidere dahildir). Pozitifse o calisan musterilerden aldigi paranin bir kismini henuz sirkete/kasaya teslim etmemis demektir. Isme tiklayinca is bazinda dokum acilir.
         </small>
 
         <?php if (!empty($settlements)): ?>

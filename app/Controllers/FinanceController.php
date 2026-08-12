@@ -66,7 +66,7 @@ class FinanceController extends Controller
         $ensureRow = static function (array &$byEmployee, $id, string $name): string {
             $key = (string) ($id ?? 'unknown');
             if (!isset($byEmployee[$key])) {
-                $byEmployee[$key] = ['name' => $name, 'received' => 0.0, 'spent' => 0.0, 'labor_paid' => 0.0, 'jobs' => []];
+                $byEmployee[$key] = ['name' => $name, 'received' => 0.0, 'spent' => 0.0, 'jobs' => []];
             }
             return $key;
         };
@@ -82,7 +82,6 @@ class FinanceController extends Controller
                     'project_name' => $item['project_name'] ?? '',
                     'received' => 0.0,
                     'spent' => 0.0,
-                    'labor_paid' => 0.0,
                 ];
             }
             return $jobId;
@@ -102,20 +101,21 @@ class FinanceController extends Controller
             $byEmployee[$key]['jobs'][$jobId]['spent'] += (float) $expense['amount'];
         }
 
-        // Labor payments count against the PAYER's held cash: if Alex
-        // collected $1200 from the customer and paid a crew member $300 in
-        // cash, Alex is now holding $900, not $1200.
+        // Labor payments count against the PAYER's held cash exactly like a
+        // regular expense (folded into "spent" — not shown as a separate
+        // column): if Alex collected $1200 from the customer and paid a
+        // crew member $300 in cash, Alex is now holding $900.
         foreach ($laborCosts as $laborCost) {
             $key = $ensureRow($byEmployee, $laborCost['paid_by'] ?? null, $laborCost['paid_by_name'] ?? 'Bilinmiyor');
-            $byEmployee[$key]['labor_paid'] += (float) $laborCost['amount'];
+            $byEmployee[$key]['spent'] += (float) $laborCost['amount'];
             $jobId = $ensureJob($byEmployee, $key, $laborCost);
-            $byEmployee[$key]['jobs'][$jobId]['labor_paid'] += (float) $laborCost['amount'];
+            $byEmployee[$key]['jobs'][$jobId]['spent'] += (float) $laborCost['amount'];
         }
 
         foreach ($byEmployee as &$row) {
-            $row['net'] = $row['received'] - $row['spent'] - $row['labor_paid'];
+            $row['net'] = $row['received'] - $row['spent'];
             foreach ($row['jobs'] as &$jobRow) {
-                $jobRow['net'] = $jobRow['received'] - $jobRow['spent'] - $jobRow['labor_paid'];
+                $jobRow['net'] = $jobRow['received'] - $jobRow['spent'];
             }
             unset($jobRow);
             $row['jobs'] = array_values($row['jobs']);

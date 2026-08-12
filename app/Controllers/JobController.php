@@ -98,7 +98,7 @@ class JobController extends Controller
         $ensureRow = static function (array &$byEmployee, $id, string $name): string {
             $key = (string) ($id ?? 'unknown');
             if (!isset($byEmployee[$key])) {
-                $byEmployee[$key] = ['name' => $name, 'received' => 0.0, 'spent' => 0.0, 'labor_paid' => 0.0];
+                $byEmployee[$key] = ['name' => $name, 'received' => 0.0, 'spent' => 0.0];
             }
             return $key;
         };
@@ -113,14 +113,15 @@ class JobController extends Controller
             $byEmployee[$key]['spent'] += (float) $expense['amount'];
         }
 
-        // Labor payments count against the PAYER's held cash.
+        // Labor payments count against the PAYER's held cash, folded into
+        // "spent" like any other expense (no separate column).
         foreach ($laborCosts as $laborCost) {
             $key = $ensureRow($byEmployee, $laborCost['paid_by'] ?? null, $laborCost['paid_by_name'] ?? 'Bilinmiyor');
-            $byEmployee[$key]['labor_paid'] += (float) $laborCost['amount'];
+            $byEmployee[$key]['spent'] += (float) $laborCost['amount'];
         }
 
         foreach ($byEmployee as &$row) {
-            $row['net'] = $row['received'] - $row['spent'] - $row['labor_paid'];
+            $row['net'] = $row['received'] - $row['spent'];
         }
         unset($row);
 
