@@ -62,9 +62,14 @@
             <table class="table table-sm mb-0">
                 <thead><tr><th>Calisan</th><th class="text-end">Aldigi Odeme</th><th class="text-end">Yaptigi Gider</th><th class="text-end">Odedigi Iscilik</th><th class="text-end">Elinde Kalan</th></tr></thead>
                 <tbody>
-                <?php foreach ($employeeFinance as $row): ?>
+                <?php foreach ($employeeFinance as $i => $row): ?>
                     <tr>
-                        <td><?= htmlspecialchars($row['name']) ?></td>
+                        <td>
+                            <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none fw-bold"
+                                    onclick="var d = document.getElementById('emp-detail-<?= $i ?>'); d.classList.toggle('d-none');">
+                                <?= htmlspecialchars($row['name']) ?> &#9662;
+                            </button>
+                        </td>
                         <td class="text-end">$<?= number_format($row['received'], 2) ?></td>
                         <td class="text-end">$<?= number_format($row['spent'], 2) ?></td>
                         <td class="text-end">$<?= number_format($row['labor_paid'] ?? 0, 2) ?></td>
@@ -72,13 +77,59 @@
                             $<?= number_format($row['net'], 2) ?>
                         </td>
                     </tr>
+                    <tr id="emp-detail-<?= $i ?>" class="d-none">
+                        <td colspan="5" class="bg-light">
+                            <?php if (empty($row['jobs'])): ?>
+                                <span class="text-muted">Bu donemde ise bagli hareket yok.</span>
+                            <?php else: ?>
+                                <div class="table-responsive">
+                                    <table class="table table-sm mb-0">
+                                        <thead><tr><th>Musteri / Is</th><th class="text-end">Aldigi</th><th class="text-end">Harcadigi</th><th class="text-end">Odedigi Iscilik</th><th class="text-end">Net</th></tr></thead>
+                                        <tbody>
+                                        <?php foreach ($row['jobs'] as $jobRow): ?>
+                                            <tr>
+                                                <td>
+                                                    <a href="<?= Url::to('/jobs/show') ?>?id=<?= $jobRow['job_id'] ?>"><?= htmlspecialchars($jobRow['customer_name']) ?></a>
+                                                    <br><small class="text-muted"><?= htmlspecialchars($jobRow['project_name']) ?></small>
+                                                </td>
+                                                <td class="text-end text-success">$<?= number_format($jobRow['received'], 2) ?></td>
+                                                <td class="text-end text-danger">$<?= number_format($jobRow['spent'], 2) ?></td>
+                                                <td class="text-end text-danger">$<?= number_format($jobRow['labor_paid'], 2) ?></td>
+                                                <td class="text-end fw-bold">$<?= number_format($jobRow['net'], 2) ?></td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
                 <?php endforeach; ?>
                 </tbody>
             </table>
         </div>
         <small class="text-muted d-block mt-2">
-            "Elinde kalan" = aldigi odeme - yaptigi gider - odedigi iscilik. Pozitifse o calisan musterilerden aldigi paranin bir kismini henuz sirkete/kasaya teslim etmemis demektir.
+            "Elinde kalan" = aldigi odeme - yaptigi gider - odedigi iscilik. Pozitifse o calisan musterilerden aldigi paranin bir kismini henuz sirkete/kasaya teslim etmemis demektir. Isme tiklayinca is bazinda dokum acilir.
         </small>
+
+        <?php if (!empty($settlements)): ?>
+            <h6 class="mb-2 mt-4">Kim Kime Borclu (Netlestirme)</h6>
+            <ul class="list-group">
+                <?php foreach ($settlements as $s): ?>
+                    <li class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <span>
+                            <strong><?= htmlspecialchars($s['from']) ?></strong>
+                            <span class="text-muted">&rarr;</span>
+                            <strong><?= htmlspecialchars($s['to']) ?></strong>
+                        </span>
+                        <span class="badge bg-primary fs-6">$<?= number_format($s['amount'], 2) ?></span>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+            <small class="text-muted d-block mt-2">
+                Eldeki paralar ile sirketin borclari birbirinden dusulerek hesaplanan odeme onerileri — bu transferler yapilirsa herkesin bakiyesi sifirlanir.
+            </small>
+        <?php endif; ?>
     <?php endif; ?>
 </div>
 
