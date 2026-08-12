@@ -139,11 +139,17 @@
     <?php else: ?>
         <div class="table-responsive">
             <table class="table table-sm mb-0">
-                <thead><tr><th>Musteri / Is</th><th class="text-end">Gelir</th><th class="text-end">Gider</th><th class="text-end">Bakiye</th><th class="text-end">Net</th></tr></thead>
+                <thead><tr><th>Musteri / Is</th><th class="text-end">Gelir</th><th class="text-end">Gider</th><th class="text-end">Net</th></tr></thead>
                 <tbody>
                 <?php foreach ($jobSummary as $j => $row): ?>
-                    <?php $totalCost = $row['expense'] + $row['labor']; ?>
-                    <tr onclick="if (!event.target.closest('a, button')) document.getElementById('job-detail-<?= $j ?>').classList.toggle('d-none');" style="cursor: pointer;">
+                    <?php
+                    $totalCost = $row['expense'] + $row['labor'];
+                    // Odenmemis bakiyesi olan isler (musteri hala borclu ya da
+                    // fazla odeme var) renkle one cikarilir.
+                    $hasOpenBalance = $row['balance'] !== null && abs($row['balance']) > 0.009;
+                    ?>
+                    <tr class="<?= $hasOpenBalance ? 'table-warning' : '' ?>"
+                        onclick="if (!event.target.closest('a, button')) document.getElementById('job-detail-<?= $j ?>').classList.toggle('d-none');" style="cursor: pointer;">
                         <td>
                             <?= htmlspecialchars($row['customer_name'] ?? '-') ?> <span class="text-muted">&#9662;</span>
                             <br><small class="text-muted"><?= htmlspecialchars($row['project_name'] ?? '') ?></small>
@@ -155,13 +161,16 @@
                             <?php endif; ?>
                         </td>
                         <td class="text-end text-danger">$<?= number_format($totalCost, 2) ?></td>
-                        <td class="text-end fw-bold"><?= $row['balance'] !== null ? '$' . number_format($row['balance'], 2) : '-' ?></td>
                         <td class="text-end fw-bold <?= $row['net'] >= 0 ? 'text-success' : 'text-danger' ?>">$<?= number_format($row['net'], 2) ?></td>
                     </tr>
                     <tr id="job-detail-<?= $j ?>" class="d-none">
-                        <td colspan="5" class="bg-light">
+                        <td colspan="4" class="bg-light">
                             <div class="d-flex flex-wrap gap-3 align-items-center py-1">
                                 <span><span class="text-muted">Sozlesme:</span> <strong><?= $row['contract_amount'] !== null ? '$' . number_format($row['contract_amount'], 2) : '-' ?></strong></span>
+                                <span>
+                                    <span class="text-muted">Kalan Bakiye:</span>
+                                    <strong class="<?= $hasOpenBalance ? 'text-warning' : 'text-success' ?>"><?= $row['balance'] !== null ? '$' . number_format($row['balance'], 2) : '-' ?></strong>
+                                </span>
                                 <span><span class="text-muted">Malzeme/Gider:</span> <strong class="text-danger">$<?= number_format($row['expense'], 2) ?></strong></span>
                                 <span><span class="text-muted">Personel:</span> <strong class="text-danger">$<?= number_format($row['labor'], 2) ?></strong></span>
                                 <a href="<?= Url::to('/jobs/show') ?>?id=<?= $row['job_id'] ?>" class="btn btn-sm btn-outline-secondary ms-auto">Ise Git</a>
@@ -173,7 +182,7 @@
             </table>
         </div>
         <small class="text-muted d-block mt-2">
-            Gelir altindaki parantez sozlesme tutaridir. Satira tiklayinca gider dokumu ve ise gitme baglantisi acilir.
+            Gelir altindaki parantez sozlesme tutaridir. Sari satirlarda odenmemis bakiye vardir. Satira tiklayinca bakiye, gider dokumu ve ise gitme baglantisi acilir.
         </small>
     <?php endif; ?>
 </div>
