@@ -94,6 +94,56 @@ $statusBadgeClass = [
     <?php endif; ?>
 </div>
 
+<?php if (!empty($timeStats)): ?>
+<!-- Zaman ve Verim -->
+<div class="card p-3 shadow-sm mb-4">
+    <h6 class="mb-3">Zaman ve Verim</h6>
+    <div class="row g-3 text-center mb-2">
+        <div class="col-6 col-md-3">
+            <div class="text-muted small">Gun Sayisi</div>
+            <div class="fs-5 fw-bold"><?= $timeStats['days'] ?></div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="text-muted small">Toplam Adam-Saat</div>
+            <div class="fs-5 fw-bold"><?= rtrim(rtrim(number_format($timeStats['person_hours'], 1), '0'), '.') ?> saat</div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="text-muted small">Gunluk Net Kazanc</div>
+            <div class="fs-5 fw-bold <?= ($timeStats['daily_net'] ?? 0) >= 0 ? 'text-success' : 'text-danger' ?>">
+                <?= $timeStats['daily_net'] !== null ? '$' . number_format($timeStats['daily_net'], 2) : '-' ?>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="text-muted small">Saatlik Net Kazanc</div>
+            <div class="fs-5 fw-bold <?= ($timeStats['hourly_net'] ?? 0) >= 0 ? 'text-success' : 'text-danger' ?>">
+                <?= $timeStats['hourly_net'] !== null ? '$' . number_format($timeStats['hourly_net'], 2) : '-' ?>
+            </div>
+        </div>
+    </div>
+    <?php if (!empty($timeStats['employee_hours'])): ?>
+        <div class="table-responsive">
+            <table class="table table-sm mb-0">
+                <thead><tr><th>Calisan</th><th class="text-end">Gunluk Saat</th><th class="text-end">Toplam Saat</th></tr></thead>
+                <tbody>
+                <?php foreach ($timeStats['employee_hours'] as $eh): ?>
+                    <tr>
+                        <td><?= htmlspecialchars($eh['name']) ?></td>
+                        <td class="text-end"><?= rtrim(rtrim(number_format($eh['daily'], 1), '0'), '.') ?> saat</td>
+                        <td class="text-end fw-bold"><?= rtrim(rtrim(number_format($eh['total'], 1), '0'), '.') ?> saat</td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    <?php endif; ?>
+    <small class="text-muted d-block mt-2">
+        Varsayilan gunluk calisma: <?= rtrim(rtrim(number_format($timeStats['default_daily_hours'], 1), '0'), '.') ?> saat
+        (bas/bitis saati girilmisse aradaki fark, girilmemisse 8 saat). Kisi bazli saati "Atanan Calisanlar" bolumunden degistirebilirsiniz.
+        Kazanc hesaplari net kar (gelir - gider - personel) uzerinden yapilir.
+    </small>
+</div>
+<?php endif; ?>
+
 <div class="row g-3 mb-4">
     <!-- Durum ve Baslangic Tarihi -->
     <div class="col-md-6">
@@ -111,22 +161,30 @@ $statusBadgeClass = [
                 </form>
             <?php endif; ?>
 
-            <h6 class="mb-2">Baslangic Tarihi / Saati</h6>
+            <h6 class="mb-2">Baslangic / Bitis Tarihi ve Saati</h6>
             <?php if (Auth::can('customers.edit')): ?>
                 <form action="<?= Url::to('/jobs/start-date') ?>" method="post">
                     <?= Csrf::field() ?>
                     <input type="hidden" name="id" value="<?= $job['id'] ?>">
                     <div class="row g-2 mb-2">
-                        <div class="col-6">
-                            <label class="form-label small text-muted mb-1">Tarih</label>
+                        <div class="col-6 col-md-3">
+                            <label class="form-label small text-muted mb-1">Baslangic Tarihi</label>
                             <input type="date" name="start_date" class="form-control" value="<?= htmlspecialchars($job['start_date'] ?? '') ?>">
                         </div>
-                        <div class="col-3">
-                            <label class="form-label small text-muted mb-1">Saat (varsa)</label>
+                        <div class="col-6 col-md-3">
+                            <label class="form-label small text-muted mb-1">Baslangic Saati</label>
                             <input type="time" name="start_time" class="form-control" value="<?= htmlspecialchars(substr($job['start_time'] ?? '', 0, 5)) ?>">
                         </div>
-                        <div class="col-3">
-                            <label class="form-label small text-muted mb-1">Sure (saat)</label>
+                        <div class="col-6 col-md-3">
+                            <label class="form-label small text-muted mb-1">Bitis Tarihi</label>
+                            <input type="date" name="end_date" class="form-control" value="<?= htmlspecialchars($job['end_date'] ?? '') ?>">
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <label class="form-label small text-muted mb-1">Bitis Saati</label>
+                            <input type="time" name="end_time" class="form-control" value="<?= htmlspecialchars(substr($job['end_time'] ?? '', 0, 5)) ?>">
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <label class="form-label small text-muted mb-1">Sure (saat, saatlik is)</label>
                             <input type="text" name="duration_hours" class="form-control" placeholder="orn. 2" value="<?= htmlspecialchars($job['duration_hours'] ?? '') ?>">
                         </div>
                     </div>
@@ -134,16 +192,16 @@ $statusBadgeClass = [
                 </form>
                 <?php if (empty($job['start_date'])): ?>
                     <small class="text-muted d-block mt-2">Baslangic tarihi henuz belirlenmedi.</small>
-                <?php elseif (!empty($job['start_time'])): ?>
+                <?php else: ?>
                     <small class="text-muted d-block mt-2">
-                        Saatlik is — takvimde <?= htmlspecialchars(substr($job['start_time'], 0, 5)) ?>
-                        <?php if (!empty($job['duration_hours'])): ?> - <?= htmlspecialchars($job['duration_hours']) ?> saat<?php endif; ?> olarak gorunecek.
+                        Bitis tarihi girilmezse is 1 gun sayilir. Bas/bitis saati girilmezse gunluk calisma 8 saat varsayilir.
                     </small>
                 <?php endif; ?>
             <?php else: ?>
                 <p class="mb-0">
                     <?= htmlspecialchars($job['start_date'] ?? 'Belirlenmedi') ?>
                     <?php if (!empty($job['start_time'])): ?> — <?= htmlspecialchars(substr($job['start_time'], 0, 5)) ?><?php endif; ?>
+                    <?php if (!empty($job['end_date'])): ?> &rarr; <?= htmlspecialchars($job['end_date']) ?><?php endif; ?>
                 </p>
             <?php endif; ?>
         </div>
@@ -158,7 +216,7 @@ $statusBadgeClass = [
             <?php else: ?>
                 <ul class="list-unstyled mb-3">
                     <?php foreach ($assignedEmployees as $emp): ?>
-                        <li class="d-flex justify-content-between align-items-center mb-2">
+                        <li class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
                             <div>
                                 <strong><?= htmlspecialchars($emp['name']) ?></strong>
                                 <br><small class="text-muted"><?= htmlspecialchars($emp['email']) ?></small>
@@ -169,12 +227,23 @@ $statusBadgeClass = [
                                 <?php endif; ?>
                             </div>
                             <?php if (Auth::can('customers.edit')): ?>
-                                <form action="<?= Url::to('/jobs/unassign-employee') ?>" method="post">
-                                    <?= Csrf::field() ?>
-                                    <input type="hidden" name="id" value="<?= $job['id'] ?>">
-                                    <input type="hidden" name="user_id" value="<?= $emp['id'] ?>">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger">Kaldir</button>
-                                </form>
+                                <div class="d-flex align-items-center gap-2">
+                                    <form action="<?= Url::to('/jobs/employee-hours') ?>" method="post" class="d-inline-flex align-items-center gap-1">
+                                        <?= Csrf::field() ?>
+                                        <input type="hidden" name="id" value="<?= $job['id'] ?>">
+                                        <input type="hidden" name="user_id" value="<?= $emp['id'] ?>">
+                                        <input type="text" name="daily_hours" class="form-control form-control-sm" style="width: 5.5rem;"
+                                               placeholder="Varsayilan" value="<?= $emp['daily_hours'] !== null ? htmlspecialchars(rtrim(rtrim((string) $emp['daily_hours'], '0'), '.')) : '' ?>"
+                                               title="Bu calisanin gunluk calisma saati (bos = varsayilan)">
+                                        <button type="submit" class="btn btn-sm btn-outline-primary">st/gun</button>
+                                    </form>
+                                    <form action="<?= Url::to('/jobs/unassign-employee') ?>" method="post">
+                                        <?= Csrf::field() ?>
+                                        <input type="hidden" name="id" value="<?= $job['id'] ?>">
+                                        <input type="hidden" name="user_id" value="<?= $emp['id'] ?>">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">Kaldir</button>
+                                    </form>
+                                </div>
                             <?php endif; ?>
                         </li>
                     <?php endforeach; ?>

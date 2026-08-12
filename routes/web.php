@@ -47,6 +47,7 @@ $router->post('/estimates/send-to-customer', [EstimateController::class, 'sendTo
 $router->get('/jobs', [JobController::class, 'index'], [AuthMiddleware::class]);
 $router->get('/jobs/show', [JobController::class, 'show'], [AuthMiddleware::class]);
 $router->post('/jobs/start-date', [JobController::class, 'updateStartDate'], [AuthMiddleware::class]);
+$router->post('/jobs/employee-hours', [JobController::class, 'updateEmployeeHours'], [AuthMiddleware::class]);
 $router->post('/jobs/status', [JobController::class, 'updateStatus'], [AuthMiddleware::class]);
 $router->post('/jobs/assign-employee', [JobController::class, 'assignEmployee'], [AuthMiddleware::class]);
 $router->post('/jobs/unassign-employee', [JobController::class, 'unassignEmployee'], [AuthMiddleware::class]);

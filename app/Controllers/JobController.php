@@ -63,13 +63,17 @@ class JobController extends Controller
         $paymentTotal = Payment::totalForJob($job['id']);
         $laborTotal = LaborCost::totalForJob($job['id']);
         $contractAmount = $estimate['amount'] ?? null;
+        $assignedEmployees = Job::employeesForJob($job['id']);
+        $netProfit = $paymentTotal - $expenseTotal - $laborTotal;
+        $timeStats = $this->buildTimeStats($job, $assignedEmployees, $netProfit);
 
         echo View::renderWithLayout('jobs/show', [
             'job' => $job,
             'project' => $project,
             'customer' => $customer,
-            'assignedEmployees' => Job::employeesForJob($job['id']),
+            'assignedEmployees' => $assignedEmployees,
             'availableEmployees' => User::allActive(),
+            'timeStats' => $timeStats,
             'expenses' => $expenses,
             'expenseTotal' => $expenseTotal,
             'payments' => $payments,
@@ -78,7 +82,7 @@ class JobController extends Controller
             'laborTotal' => $laborTotal,
             'contractAmount' => $contractAmount,
             'balanceDue' => $contractAmount !== null ? ((float) $contractAmount - $paymentTotal) : null,
-            'netProfit' => $paymentTotal - $expenseTotal - $laborTotal,
+            'netProfit' => $netProfit,
             'employeeFinance' => $this->buildEmployeeFinance($payments, $expenses, $laborCosts),
             'checklist' => ChecklistItem::allForJob($job['id']),
         ]);
@@ -128,6 +132,59 @@ class JobController extends Controller
         return array_values($byEmployee);
     }
 
+    /**
+     * Zaman ve verim hesabi:
+     * - Gun sayisi: start_date..end_date arasi (iki uc dahil); end_date
+     *   yoksa start_date varsa 1 gun.
+     * - Varsayilan gunluk saat: start_time ve end_time ikisi de girilmisse
+     *   aradaki fark, degilse 8 saat.
+     * - Kisi bazli saat: job_employees.daily_hours doluysa o kisinin
+     *   gunluk saati onu ezer ("Alex 5 saat, Matt 8 saat").
+     * - Toplam adam-saat = her calisanin (gun x gunluk saat) toplami.
+     * - Gunluk kazanc = net kar / gun; saatlik kazanc = net kar / adam-saat.
+     */
+    private function buildTimeStats(array $job, array $assignedEmployees, float $netProfit): ?array
+    {
+        if (empty($job['start_date'])) {
+            return null;
+        }
+
+        $start = strtotime($job['start_date']);
+        $end = !empty($job['end_date']) ? strtotime($job['end_date']) : $start;
+        if ($end === false || $start === false || $end < $start) {
+            $end = $start;
+        }
+        $days = (int) floor(($end - $start) / 86400) + 1;
+
+        $defaultDailyHours = 8.0;
+        if (!empty($job['start_time']) && !empty($job['end_time'])) {
+            $diff = (strtotime($job['end_time']) - strtotime($job['start_time'])) / 3600;
+            if ($diff > 0) {
+                $defaultDailyHours = round($diff, 1);
+            }
+        }
+
+        $personHours = 0.0;
+        $employeeHours = [];
+        foreach ($assignedEmployees as $employee) {
+            $daily = $employee['daily_hours'] !== null && $employee['daily_hours'] !== ''
+                ? (float) $employee['daily_hours']
+                : $defaultDailyHours;
+            $total = $days * $daily;
+            $personHours += $total;
+            $employeeHours[] = ['name' => $employee['name'], 'daily' => $daily, 'total' => $total];
+        }
+
+        return [
+            'days' => $days,
+            'default_daily_hours' => $defaultDailyHours,
+            'person_hours' => $personHours,
+            'employee_hours' => $employeeHours,
+            'daily_net' => $days > 0 ? $netProfit / $days : null,
+            'hourly_net' => $personHours > 0 ? $netProfit / $personHours : null,
+        ];
+    }
+
     public function updateStartDate(): void
     {
         if (!Auth::can('customers.edit')) {
@@ -147,6 +204,8 @@ class JobController extends Controller
 
         $startDate = trim((string) $this->input('start_date'));
         $startTime = trim((string) $this->input('start_time'));
+        $endDate = trim((string) $this->input('end_date'));
+        $endTime = trim((string) $this->input('end_time'));
         $durationRaw = trim((string) $this->input('duration_hours'));
         $duration = $durationRaw !== '' ? (float) preg_replace('/[^0-9.]/', '', $durationRaw) : null;
 
@@ -154,8 +213,42 @@ class JobController extends Controller
             (int) $job['id'],
             $startDate !== '' ? $startDate : null,
             $startTime !== '' ? $startTime : null,
-            $duration
+            $duration,
+            $endDate !== '' ? $endDate : null,
+            $endTime !== '' ? $endTime : null
         );
+
+        $this->redirect('/jobs/show?id=' . $job['id']);
+    }
+
+    /**
+     * Saves one assigned employee's daily working hours on this job
+     * (empty input = back to the job default).
+     */
+    public function updateEmployeeHours(): void
+    {
+        if (!Auth::can('customers.edit')) {
+            $this->forbidden();
+            return;
+        }
+
+        $job = $this->loadJobOr404();
+        if (!$job) {
+            return;
+        }
+
+        if (!Csrf::verify($this->input('csrf_token'))) {
+            $this->redirect('/jobs/show?id=' . $job['id']);
+            return;
+        }
+
+        $userId = (int) $this->input('user_id');
+        $hoursRaw = trim((string) $this->input('daily_hours'));
+        $hours = $hoursRaw !== '' ? (float) preg_replace('/[^0-9.]/', '', $hoursRaw) : null;
+
+        if ($userId > 0) {
+            Job::setEmployeeDailyHours((int) $job['id'], $userId, $hours);
+        }
 
         $this->redirect('/jobs/show?id=' . $job['id']);
     }

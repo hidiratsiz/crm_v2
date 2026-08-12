@@ -151,12 +151,13 @@ class Job
         $stmt->execute(['id' => $id, 'status' => $status]);
     }
 
-    public static function updateStartDate(int $id, ?string $startDate, ?string $startTime = null, ?float $durationHours = null): void
+    public static function updateStartDate(int $id, ?string $startDate, ?string $startTime = null, ?float $durationHours = null, ?string $endDate = null, ?string $endTime = null): void
     {
         $db = Database::connection();
         // Setting a start date automatically moves a pending job to "scheduled"
         $stmt = $db->prepare(
             "UPDATE jobs SET start_date = :start_date, start_time = :start_time, duration_hours = :duration_hours,
+             end_date = :end_date, end_time = :end_time,
              status = IF(status = 'pending_schedule' AND :start_date2 IS NOT NULL, 'scheduled', status)
              WHERE id = :id"
         );
@@ -165,8 +166,23 @@ class Job
             'start_date' => $startDate,
             'start_time' => $startTime,
             'duration_hours' => $durationHours,
+            'end_date' => $endDate,
+            'end_time' => $endTime,
             'start_date2' => $startDate,
         ]);
+    }
+
+    /**
+     * Per-employee daily working hours on a job (null = use the job's
+     * default). Lets "Alex 5 saat, Matt 8 saat calisti" be recorded.
+     */
+    public static function setEmployeeDailyHours(int $jobId, int $userId, ?float $hours): void
+    {
+        $db = Database::connection();
+        $stmt = $db->prepare(
+            'UPDATE job_employees SET daily_hours = :hours WHERE job_id = :job_id AND user_id = :user_id'
+        );
+        $stmt->execute(['job_id' => $jobId, 'user_id' => $userId, 'hours' => $hours]);
     }
 
     /**
@@ -224,7 +240,7 @@ class Job
     {
         $db = Database::connection();
         $stmt = $db->prepare(
-            'SELECT u.id, u.name, u.email, je.assigned_at, je.notified_at
+            'SELECT u.id, u.name, u.email, je.assigned_at, je.notified_at, je.daily_hours
              FROM job_employees je
              JOIN users u ON u.id = je.user_id
              WHERE je.job_id = :job_id
