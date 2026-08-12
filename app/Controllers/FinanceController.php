@@ -126,52 +126,53 @@ class FinanceController extends Controller
     }
 
     /**
-     * "Kim kime borclu": nets the per-employee balances against each other.
-     * Positive net = that person is holding company money; negative net =
-     * the company owes them (they spent out of pocket). Greedy matching
-     * pairs holders with creditors ("Alex -> System Admin: $408.73"), and
-     * whatever remains is settled against the company cash box ("Kasa").
+     * "Kim kime borclu": equal-share settlement AMONG THE PEOPLE themselves
+     * (no company cash box involved). The combined net cash on hand is
+     * divided equally across everyone in the list; whoever holds more than
+     * their equal share pays the difference to whoever holds less, with
+     * greedy matching to keep the transfer list short. After the suggested
+     * transfers, everyone holds exactly the same amount.
      */
     private function buildSettlements(array $employeeFinance): array
     {
-        $holders = [];   // net > 0: owes money (to creditors/company)
-        $creditors = []; // net < 0: is owed money
+        if (count($employeeFinance) < 2) {
+            return [];
+        }
+
+        $totalNet = 0.0;
         foreach ($employeeFinance as $row) {
-            $net = round((float) $row['net'], 2);
-            if ($net > 0.009) {
-                $holders[] = ['name' => $row['name'], 'amount' => $net];
-            } elseif ($net < -0.009) {
-                $creditors[] = ['name' => $row['name'], 'amount' => -$net];
+            $totalNet += (float) $row['net'];
+        }
+        $share = $totalNet / count($employeeFinance);
+
+        $payers = [];    // holds more than the equal share
+        $receivers = []; // holds less than the equal share
+        foreach ($employeeFinance as $row) {
+            $delta = round((float) $row['net'] - $share, 2);
+            if ($delta > 0.009) {
+                $payers[] = ['name' => $row['name'], 'amount' => $delta];
+            } elseif ($delta < -0.009) {
+                $receivers[] = ['name' => $row['name'], 'amount' => -$delta];
             }
         }
 
-        // Biggest balances first so the settlement list stays short.
-        usort($holders, fn ($a, $b) => $b['amount'] <=> $a['amount']);
-        usort($creditors, fn ($a, $b) => $b['amount'] <=> $a['amount']);
+        // Biggest differences first so the settlement list stays short.
+        usort($payers, fn ($a, $b) => $b['amount'] <=> $a['amount']);
+        usort($receivers, fn ($a, $b) => $b['amount'] <=> $a['amount']);
 
         $settlements = [];
-        $h = 0;
-        $c = 0;
-        while ($h < count($holders) && $c < count($creditors)) {
-            $transfer = min($holders[$h]['amount'], $creditors[$c]['amount']);
-            $settlements[] = ['from' => $holders[$h]['name'], 'to' => $creditors[$c]['name'], 'amount' => $transfer];
-            $holders[$h]['amount'] -= $transfer;
-            $creditors[$c]['amount'] -= $transfer;
-            if ($holders[$h]['amount'] < 0.009) {
-                $h++;
+        $p = 0;
+        $r = 0;
+        while ($p < count($payers) && $r < count($receivers)) {
+            $transfer = min($payers[$p]['amount'], $receivers[$r]['amount']);
+            $settlements[] = ['from' => $payers[$p]['name'], 'to' => $receivers[$r]['name'], 'amount' => $transfer];
+            $payers[$p]['amount'] -= $transfer;
+            $receivers[$r]['amount'] -= $transfer;
+            if ($payers[$p]['amount'] < 0.009) {
+                $p++;
             }
-            if ($creditors[$c]['amount'] < 0.009) {
-                $c++;
-            }
-        }
-        for (; $h < count($holders); $h++) {
-            if ($holders[$h]['amount'] > 0.009) {
-                $settlements[] = ['from' => $holders[$h]['name'], 'to' => 'Sirket Kasasi', 'amount' => $holders[$h]['amount']];
-            }
-        }
-        for (; $c < count($creditors); $c++) {
-            if ($creditors[$c]['amount'] > 0.009) {
-                $settlements[] = ['from' => 'Sirket Kasasi', 'to' => $creditors[$c]['name'], 'amount' => $creditors[$c]['amount']];
+            if ($receivers[$r]['amount'] < 0.009) {
+                $r++;
             }
         }
 

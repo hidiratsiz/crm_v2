@@ -113,7 +113,7 @@
         </small>
 
         <?php if (!empty($settlements)): ?>
-            <h6 class="mb-2 mt-4">Kim Kime Borclu (Netlestirme)</h6>
+            <h6 class="mb-2 mt-4">Kim Kime Borclu (Esit Paylasim)</h6>
             <ul class="list-group">
                 <?php foreach ($settlements as $s): ?>
                     <li class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2">
@@ -127,7 +127,7 @@
                 <?php endforeach; ?>
             </ul>
             <small class="text-muted d-block mt-2">
-                Eldeki paralar ile sirketin borclari birbirinden dusulerek hesaplanan odeme onerileri — bu transferler yapilirsa herkesin bakiyesi sifirlanir.
+                Eldeki toplam net para kisi sayisina esit bolunur; payindan fazla tutan, az tutana aradaki farki oder. Bu transferler yapilirsa herkesin elindeki tutar esitlenir.
             </small>
         <?php endif; ?>
     <?php endif; ?>
