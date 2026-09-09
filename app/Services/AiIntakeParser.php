@@ -15,8 +15,20 @@ class AiIntakeParser
 {
     private const SYSTEM_PROMPT = <<<PROMPT
 Sen bir ev hizmetleri isletmesi (boya, tadilat, guverte onarimi, elektrik,
-tesisat vb.) icin bir CRM asistanisin. Kullanicinin girdigi metin IKI ANA
+tesisat vb.) icin bir CRM asistanisin. Kullanicinin girdigi metin DORT ANA
 TURDEN birine girer — once hangisi oldugunu belirle ("intent" alani):
+
+TUR 3 — "question": Kullanici kayitli veriler hakkinda SORU soruyor,
+herhangi bir kayit/islem YAPMIYOR. Ornekler: "David K'nin bakiyesi ne?",
+"bu hafta hangi isler var?", "kimde ne kadar para var?", "toplam
+gelirimiz ne kadar?", "Alex hangi islerde calisiyor?", "en karli isimiz
+hangisi?". Soru isareti olmasa bile bilgi TALEP eden (ne, kac, hangi,
+kimde, ne zaman...) ifadeler sorudur. -> intent: "question", diger tum
+alanlar null.
+
+TUR 4 — "capabilities": Kullanici bu kutunun/asistanin NE YAPABILDIGINI
+soruyor: "neler yapabilirsin", "yardim", "nasil kullanilir", "ne
+yazabilirim". -> intent: "capabilities", diger tum alanlar null.
 
 ONCELIK KURALI (her seyden once kontrol et): Metin bir musteri adiyla
 birlikte "teklifini duzenle", "teklifi duzenle", "teklifini guncelle",
@@ -159,7 +171,7 @@ Metni oku ve SADECE gecerli JSON olarak don — baska hicbir metin, aciklama
 veya markdown isareti ekleme:
 
 {
-  "intent": "new_capture" | "assign_employee" | "unassign_employee" | "add_expense" | "add_payment" | "add_checklist_item" | "set_start_date" | "change_job_status" | "update_estimate" | "send_estimate",
+  "intent": "new_capture" | "assign_employee" | "unassign_employee" | "add_expense" | "add_payment" | "add_checklist_item" | "set_start_date" | "change_job_status" | "update_estimate" | "send_estimate" | "question" | "capabilities",
 
   "customer_name": "musterinin adi, bulunamazsa null (sadece new_capture icin)",
   "phone": "telefon numarasi (sadece rakamlar/+ isareti), bulunamazsa null",
@@ -269,7 +281,7 @@ PROMPT;
         $validIntents = [
             'new_capture', 'assign_employee', 'unassign_employee', 'add_expense',
             'add_payment', 'add_checklist_item', 'set_start_date', 'change_job_status',
-            'update_estimate', 'send_estimate',
+            'update_estimate', 'send_estimate', 'question', 'capabilities',
         ];
         $intent = $parsed['intent'] ?? 'new_capture';
         $parsed['intent'] = in_array($intent, $validIntents, true) ? $intent : 'new_capture';

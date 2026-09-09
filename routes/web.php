@@ -28,6 +28,7 @@ $router->get('/dashboard', [DashboardController::class, 'index'], [AuthMiddlewar
 // Quick Capture (AI destekli hizli kayit kutusu)
 $router->get('/quick-capture', [QuickCaptureController::class, 'showForm'], [AuthMiddleware::class]);
 $router->post('/quick-capture', [QuickCaptureController::class, 'process'], [AuthMiddleware::class]);
+$router->get('/quick-capture/help', [QuickCaptureController::class, 'showHelp'], [AuthMiddleware::class]);
 
 // Projects (teklifler burada gorunur)
 $router->get('/projects', [ProjectController::class, 'index'], [AuthMiddleware::class]);

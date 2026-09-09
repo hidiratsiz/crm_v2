@@ -320,6 +320,8 @@ Her İş (Job) sayfasında bir **Proje Finansmanı** kartı bulunur:
 
 **AI Hızlı Kayıt ile:** "Jane'in isine 500 dolar odeme alindi" gibi bir komutla da ödeme kaydedilebilir — mevcut "gider ekle" komutuyla aynı mantık.
 
+**Hızlı Kayıt artık soru da yanıtlar:** Kutuya komut yerine soru yazarsanız ("David K'nin bakiyesi ne?", "kimde ne kadar para var?", "bu hafta hangi işler var?", "en kârlı işimiz hangisi?"), sistem veritabanının güncel bir özetini AI'ya verip yanıtı doğrudan kayıtlardan üretir — hiçbir veri değiştirilmez, sadece okunur. "Neler yapabilirsin?" yazınca (veya kutunun yanındaki "Neler yapabilir?" bağlantısıyla) tüm yeteneklerin listelendiği yardım sayfası açılır.
+
 **Zaman ve Verim:** Her işe başlangıç/bitiş tarihi ve saati girilebilir. Gün sayısı = başlangıç-bitiş arası (iki uç dahil); başlangıç/bitiş saati girilmişse günlük çalışma = aradaki fark, girilmemişse **8 saat** varsayılır. "Atanan Çalışanlar" bölümünden kişi bazlı günlük saat da girilebilir (örn. Alex 5 saat, Matt 8 saat). İş sayfasındaki "Zaman ve Verim" kartı gün sayısını, toplam adam-saati, çalışan bazında saat dökümünü ve net kâr üzerinden **günlük/saatlik kazancı** gösterir.
 
 **Finans sayfası:** Sol menüdeki "Finans" sekmesi, tek bir işe değil şirketin **tamamına** bakan bir özet sayfasıdır. Tarih aralığına göre filtrelenebilir (boş bırakılırsa tüm zamanlar) ve şunları gösterir: toplam gelir/gider/net özet kartları, şirket genelinde "kimde ne kadar var" tablosu, işe göre gruplanmış gelir-gider-bakiye özeti, ve tüm ödeme+gider hareketlerinin tek bir kronolojik listesi.

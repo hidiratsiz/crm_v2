@@ -15,6 +15,7 @@ use App\Models\Job;
 use App\Models\Payment;
 use App\Models\Project;
 use App\Models\User;
+use App\Services\AiAnswerer;
 use App\Services\AiIntakeParser;
 use App\Services\EstimateMailer;
 use App\Services\JobNotifier;
@@ -30,6 +31,16 @@ class QuickCaptureController extends Controller
         }
 
         echo View::renderWithLayout('quick-capture/index', ['error' => null, 'raw_text' => '']);
+    }
+
+    public function showHelp(): void
+    {
+        if (!Auth::can('customers.create')) {
+            $this->forbidden();
+            return;
+        }
+
+        echo View::renderWithLayout('quick-capture/capabilities');
     }
 
     public function process(): void
@@ -66,6 +77,19 @@ class QuickCaptureController extends Controller
                 'error' => 'AI isleme hatasi: ' . $e->getMessage(),
                 'raw_text' => $rawText,
             ]);
+            return;
+        }
+
+        // Question mode: the user is ASKING about existing data, not
+        // recording anything — answer from a database snapshot (read-only).
+        if ($parsed['intent'] === 'question') {
+            $this->handleQuestion($rawText, $config);
+            return;
+        }
+
+        // "Neler yapabilirsin?" — show the static capabilities guide.
+        if ($parsed['intent'] === 'capabilities') {
+            echo View::renderWithLayout('quick-capture/capabilities');
             return;
         }
 
@@ -174,6 +198,26 @@ class QuickCaptureController extends Controller
             'customerUpdated' => $customerUpdated,
             'estimateCount' => $estimateCount,
             'appointmentCreated' => $appointmentCreated,
+        ]);
+    }
+
+    // ---- Question mode: read-only answers from a data snapshot ----
+
+    private function handleQuestion(string $question, array $config): void
+    {
+        try {
+            $answer = AiAnswerer::answer($question, $config);
+        } catch (Throwable $e) {
+            echo View::renderWithLayout('quick-capture/index', [
+                'error' => 'Soru yanitlanamadi: ' . $e->getMessage(),
+                'raw_text' => $question,
+            ]);
+            return;
+        }
+
+        echo View::renderWithLayout('quick-capture/answer', [
+            'question' => $question,
+            'answer' => $answer,
         ]);
     }
 

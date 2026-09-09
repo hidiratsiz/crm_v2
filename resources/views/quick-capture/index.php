@@ -6,19 +6,16 @@
     okuyup sisteme kaydedecek.
 </p>
 
-<div class="alert alert-light border mb-4">
-    <strong>Bu kutu ayrica komutlarla mevcut isleri de yonetebilir:</strong>
-    <ul class="mb-0 mt-2">
-        <li>"Jane'in isine Alex gitsin" — calisan atar (+ otomatik e-posta bildirimi)</li>
-        <li>"Alex'i Jane'in isinden cikar" — atamayi kaldirir</li>
-        <li>"Jane'in isine 200 dolar malzeme gideri ekle" — gider ekler</li>
-        <li>"Jane'in isine 500 dolar odeme alindi" — odeme/tahsilat kaydeder</li>
-        <li>"Jane'in isine 'eski dolaplari sok' adimini ekle" — kontrol listesine adim ekler</li>
-        <li>"Jane'in isi 1 Agustos'ta baslasin" — baslangic tarihi belirler</li>
-        <li>"Jane'in isi 1 Agustos saat 14:00'te baslasin, 2 saat surecek" — saatlik is icin saat/sure de belirler</li>
-        <li>"Jane'in isi tamamlandi" — is durumunu gunceller</li>
-        <li>Musteri adi yerine is numarasi da kullanabilirsiniz: "3 nolu ise 200 dolar gider ekle", "is 5 tamamlandi" (is numaralari Isler sayfasinda #ID olarak gorunur)</li>
-    </ul>
+<div class="alert alert-light border mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+        <strong>Bu kutuya yazabilecekleriniz:</strong>
+        <ul class="mb-0 mt-2">
+            <li><strong>Yeni kayit:</strong> "63 Grand Valley, musteri Leah, guverte onarimi istiyor..."</li>
+            <li><strong>Komut:</strong> "Jane'in isine 200 dolar gider ekle", "3 nolu is tamamlandi", "David K'ye teklifi gonder"</li>
+            <li><strong>Soru:</strong> "David K'nin bakiyesi ne?", "kimde ne kadar para var?", "bu hafta hangi isler var?"</li>
+        </ul>
+    </div>
+    <a href="<?= Url::to('/quick-capture/help') ?>" class="btn btn-outline-secondary btn-sm text-nowrap">Neler yapabilir?</a>
 </div>
 
 <?php if (!empty($error)): ?>
